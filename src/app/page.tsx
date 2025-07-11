@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
-import Markdown from 'react-markdown'
+import Markdown from 'react-markdown';
+import { Send, Pencil } from 'lucide-react';
 
 export default function HomePage() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -125,22 +126,33 @@ export default function HomePage() {
               }
               className="mb-4 flex w-full flex-row items-center gap-3"
             >
-              <input
-                className={
-                  (messages.length === 0) 
-                  ? "focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs bg-white/75"
-                  : "focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs"
-                }
-                value={input}
-                placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
-                onChange={handleInputChange}
-              />
+              <div className="relative flex-1">
+                <Pencil 
+                  size={18} 
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-violet z-20 transition-colors duration-300" 
+                />
+                <input
+                  className={`
+                    h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-4 py-4 
+                    shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
+                    focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
+                    ${messages.length === 0 
+                      ? 'bg-white/75 border-gray-300/60 shadow-lg' 
+                      : 'bg-white/40 border-gray-300/40 shadow-sm'
+                    }
+                  `}
+                  value={input}
+                  placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
+                  onChange={handleInputChange}
+                />
+              </div>
 
               <button
                 type="submit"
-                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl"
+                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2"
               >
-                Enviar
+                <Send size={20} />
+                <span className="hidden sm:inline">Enviar</span>
               </button>
             </form>
           </div>
