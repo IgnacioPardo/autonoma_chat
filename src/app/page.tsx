@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
