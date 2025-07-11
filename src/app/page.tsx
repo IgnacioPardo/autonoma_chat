@@ -4,10 +4,67 @@ import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
 import Markdown from 'react-markdown';
-import { Send, Pencil } from 'lucide-react';
+import { Send, Pencil, Check, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function HomePage() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const { messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat();
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const startEdit = (messageId: string, currentText: string) => {
+    setEditingMessageId(messageId);
+    setEditText(currentText);
+  };
+
+  const cancelEdit = () => {
+    setEditingMessageId(null);
+    setEditText("");
+  };
+
+  const saveEdit = (messageId: string) => {
+    if (!editText.trim()) {
+      cancelEdit();
+      return;
+    }
+
+    // Find the index of the edited message
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Update the message text
+    const updatedMessages = messages.map((message, index) => {
+      if (index === messageIndex) {
+        return {
+          ...message,
+          parts: message.parts.map(part => 
+            part.type === 'text' 
+              ? { ...part, text: editText.trim() }
+              : part
+          )
+        };
+      }
+      return message;
+    });
+
+    // Keep only messages up to and including the edited one
+    const newMessages = updatedMessages.slice(0, messageIndex + 1);
+    
+    // Update the messages state
+    setMessages(newMessages);
+    
+    // Clear editing state
+    setEditingMessageId(null);
+    setEditText("");
+
+    // If this was a user message, trigger regeneration
+    if (messages[messageIndex]?.role === 'user') {
+      // Small delay to ensure state is updated, then reload from this point
+      setTimeout(() => {
+        reload();
+      }, 100);
+    }
+  };
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -66,33 +123,77 @@ export default function HomePage() {
                       : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm"
                   }`}
                 >
-                  {message.parts.map((part, i) => {
-                    switch (part.type) {
-                      case "text":
-                        return (
-                          <div
-                            key={`${message.id}-${i}`}
-                            className={`prose prose-sm max-w-none ${
-                              message.role === "user" 
-                                ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
-                                : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
-                            }`}
-                          >
-                            <Markdown>
-                              {part.text}
-                            </Markdown>
-                          </div>
-                        );
-                    }
-                  })}
+                  {editingMessageId === message.id ? (
+                    // Edit mode
+                    <div className="space-y-3">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
+                            saveEdit(message.id);
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelEdit();
+                          }
+                        }}
+                        className="w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-sm leading-relaxed"
+                        placeholder="Escribe tu mensaje editado..."
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => saveEdit(message.id)}
+                          disabled={!editText.trim()}
+                          className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                          title="Guardar cambios"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="p-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                          title="Cancelar edición"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Normal message display
+                    <>
+                      {message.parts.map((part, i) => {
+                        switch (part.type) {
+                          case "text":
+                            return (
+                              <div
+                                key={`${message.id}-${i}`}
+                                className={`prose prose-sm max-w-none ${
+                                  message.role === "user" 
+                                    ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
+                                    : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
+                                }`}
+                              >
+                                <Markdown>
+                                  {part.text}
+                                </Markdown>
+                              </div>
+                            );
+                        }
+                      })}
 
-                  {/* Botones de acción que aparecen al hacer hover */}
-                  <MessageActions
-                    messageText={messageText}
-                    isUserMessage={message.role === "user"}
-                    onCopy={copyToClipboard}
-                    onShare={shareText}
-                  />
+                      {/* Botones de acción que aparecen al hacer hover */}
+                      <MessageActions
+                        messageText={messageText}
+                        isUserMessage={message.role === "user"}
+                        onCopy={copyToClipboard}
+                        onShare={shareText}
+                        onEdit={message.role === "user" ? () => startEdit(message.id, messageText) : undefined}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             );
