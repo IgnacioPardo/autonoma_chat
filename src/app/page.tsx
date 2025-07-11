@@ -4,8 +4,9 @@ import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
 import ChatSidebar from "~/components/chat-sidebar";
+import NavBar from "~/components/navbar";
 import Markdown from 'react-markdown';
-import { Send, Pencil, Check, X, MessageSquare, Plus } from 'lucide-react';
+import { Send, Pencil, Check, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { saveChatHistory, updateChatHistory, getChatById, generateChatTitle, type ChatHistory } from '~/lib/chat-history';
 import type { Message } from 'ai';
@@ -237,31 +238,15 @@ export default function HomePage() {
       
       {/* background */}
       <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
+      
       {/* NavBar */}
-      <nav className="fixed top-0 z-10 flex w-full items-center justify-between bg-white p-8 shadow-md">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          title="Historial de chats"
-        >
-          <MessageSquare size={20} className="text-primary-violet" />
-          <span className="hidden sm:inline text-sm text-gray-600">Historial</span>
-        </button>
-        
-        <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
-        
-        {/* Indicador de guardado sutil */}
-        <div className="w-[120px] flex justify-end">
-          {isSaving && (
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <div className="animate-spin rounded-full h-3 w-3 border-b border-primary-violet"></div>
-              <span>Guardando</span>
-            </div>
-          )}
-        </div>
-      </nav>
-      <main className="flex min-h-screen w-2/3 flex-col items-center justify-start overflow-y-auto">
-        <div className="flex w-full flex-col space-y-4 pt-28 pb-40">
+      <NavBar 
+        onOpenSidebar={() => setSidebarOpen(true)}
+        isSaving={isSaving}
+      />
+
+      <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto">
+        <div className="flex w-full flex-col space-y-12 sm:space-y-8 pt-28 pb-40">
           {messages.map((message) => {
             const messageText = message.content;
 
@@ -293,7 +278,7 @@ export default function HomePage() {
                             cancelEdit();
                           }
                         }}
-                        className="w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-sm leading-relaxed"
+                        className="w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-xs sm:text-sm leading-relaxed"
                         placeholder="Escribe tu mensaje editado..."
                         autoFocus
                       />
@@ -319,7 +304,7 @@ export default function HomePage() {
                     // Normal message display
                     <>
                       <div
-                        className={`prose prose-sm max-w-none ${
+                        className={`prose prose-sm sm:prose-base max-w-none ${
                           message.role === "user" 
                             ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
                             : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
@@ -356,7 +341,7 @@ export default function HomePage() {
           )}
           
           {/* Input Form - posición dinámica basada en si hay mensajes */}
-          <div className={`fixed w-2/3 p-4 transition-all duration-1000 ease-in-out ${
+          <div className={`fixed w-5/6 sm:w-4/5 md:w-2/3 p-4 transition-all duration-1000 ease-in-out ${
             messages.length === 0 
               ? "bottom-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
               : "bottom-0 left-1/2 transform -translate-x-1/2"
@@ -383,6 +368,7 @@ export default function HomePage() {
                     h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-4 py-4 
                     shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
                     focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
+                    text-sm sm:text-base
                     ${messages.length === 0 
                       ? 'bg-white/75 border-gray-300/60 shadow-lg' 
                       : 'bg-white/40 border-gray-300/40 shadow-sm'
@@ -396,7 +382,7 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2"
+                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base"
               >
                 <Send size={20} />
                 <span className="hidden sm:inline">Enviar</span>

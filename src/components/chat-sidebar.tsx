@@ -195,7 +195,7 @@ export default function ChatSidebar({
                     </p>
                   </div>
                   
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100">
                     {chat.messages.length >= 2 && (
                       <button
                         onClick={(e) => handleRegenerateTitle(chat, e)}

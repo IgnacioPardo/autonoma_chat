@@ -18,7 +18,8 @@ export default function MessageActions({
 }: MessageActionsProps) {
   return (
     <div
-      className={`absolute ${isUserMessage ? "left-4" : "right-4"} -bottom-10 flex flex-row gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100`}
+      className={`absolute ${isUserMessage ? "left-4" : "right-4"} -bottom-10 flex flex-row gap-1 transition-opacity duration-200 
+        opacity-100 md:opacity-0 md:group-hover:opacity-100`}
     >
       {/* Edit button - only for user messages */}
       {isUserMessage && onEdit && (
