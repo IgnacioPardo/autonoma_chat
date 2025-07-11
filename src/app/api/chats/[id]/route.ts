@@ -76,6 +76,38 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { title } = await request.json()
+
+    const chat = await prisma.chat.update({
+      where: { id: params.id },
+      data: {
+        title,
+        updatedAt: new Date()
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc'
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(chat)
+  } catch (error) {
+    console.error('Error updating chat title:', error)
+    return NextResponse.json(
+      { error: 'Failed to update chat title' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

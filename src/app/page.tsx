@@ -7,45 +7,86 @@ import ChatSidebar from "~/components/chat-sidebar";
 import Markdown from 'react-markdown';
 import { Send, Pencil, Check, X, MessageSquare, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { saveChatHistory, updateChatHistory, getChatById, type ChatHistory } from '~/lib/chat-history';
+import { saveChatHistory, updateChatHistory, getChatById, generateChatTitle, type ChatHistory } from '~/lib/chat-history';
 import type { Message } from 'ai';
 
 export default function HomePage() {
-  const { messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat();
+  const { messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
+    onFinish: async (message) => {
+      // Save chat when AI response is complete
+      await saveChatAfterMessage([...messages, message]);
+    }
+  });
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0);
 
-  // Auto-save chat when messages change (only when conversation is complete)
-  useEffect(() => {
-    const saveChat = async () => {
-      if (messages.length > 0 && !isSaving) {
-        // Only save if the last message is from assistant (conversation round complete)
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage && lastMessage.role === 'assistant') {
-          setIsSaving(true);
-          try {
-            if (currentChatId) {
-              await updateChatHistory(currentChatId, messages);
-            } else {
-              const savedChat = await saveChatHistory(messages);
-              setCurrentChatId(savedChat.id);
+  // Helper function to save chat after key events
+  const saveChatAfterMessage = async (messagesToSave: Message[]) => {
+    if (messagesToSave.length === 0 || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      if (currentChatId) {
+        // Verify the chat still exists before updating
+        try {
+          await updateChatHistory(currentChatId, messagesToSave);
+          
+          // If this is the first AI response (messages length is 2), regenerate title
+          if (messagesToSave.length === 2 && messagesToSave[1]?.role === 'assistant') {
+            try {
+              const newTitle = await generateChatTitle(messagesToSave);
+              // Update the chat with the new title
+              const response = await fetch(`/api/chats/${currentChatId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle })
+              });
+              if (!response.ok) {
+                console.warn('Failed to update chat title');
+              }
+            } catch (titleError) {
+              console.warn('Failed to generate new title:', titleError);
             }
-          } catch (error) {
-            console.error('Error saving chat:', error);
-          } finally {
-            setIsSaving(false);
           }
+        } catch (updateError) {
+          // If update fails, create a new chat instead
+          console.log('Chat no longer exists, creating new one');
+          const savedChat = await saveChatHistory(messagesToSave);
+          setCurrentChatId(savedChat.id);
         }
+      } else {
+        const savedChat = await saveChatHistory(messagesToSave);
+        setCurrentChatId(savedChat.id);
+        setSidebarRefreshTrigger(prev => prev + 1); // Trigger sidebar refresh
       }
-    };
+    } catch (error) {
+      console.error('Error saving chat:', error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 500); // Small delay to show saving state
+    }
+  };
 
-    // Debounce the save operation
-    const timeoutId = setTimeout(saveChat, 2000);
-    return () => clearTimeout(timeoutId);
-  }, [messages, currentChatId, isSaving]);
+  // Custom form submit handler to save after user message
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if (!input.trim()) return;
+    
+    // Call the original handleSubmit
+    handleSubmit(e);
+    
+    // Save chat after user message is added
+    // We need to wait a bit for the message to be added to the state
+    setTimeout(async () => {
+      // Get the updated messages state (should include the new user message)
+      const currentMessages = [...messages];
+      if (currentMessages.length > 0) {
+        await saveChatAfterMessage(currentMessages);
+      }
+    }, 500);
+  };
 
   const startEdit = (messageId: string, currentText: string) => {
     setEditingMessageId(messageId);
@@ -94,6 +135,21 @@ export default function HomePage() {
         await updateChatHistory(currentChatId, newMessages);
       } catch (error) {
         console.error('Error updating chat:', error);
+        // If update fails, try creating a new chat
+        try {
+          const savedChat = await saveChatHistory(newMessages);
+          setCurrentChatId(savedChat.id);
+        } catch (saveError) {
+          console.error('Error creating new chat:', saveError);
+        }
+      }
+    } else {
+      // Create new chat if no current chat ID
+      try {
+        const savedChat = await saveChatHistory(newMessages);
+        setCurrentChatId(savedChat.id);
+      } catch (error) {
+        console.error('Error creating new chat:', error);
       }
     }
 
@@ -119,6 +175,14 @@ export default function HomePage() {
       setCurrentChatId(chat.id);
     } catch (error) {
       console.error('Error loading chat:', error);
+    }
+  };
+
+  const handleChatDeleted = (deletedChatId: string) => {
+    // If the deleted chat was the current one, reset to new chat state
+    if (deletedChatId === currentChatId) {
+      setCurrentChatId(null);
+      // Don't clear messages here as the user might still be in a conversation
     }
   };
 
@@ -167,6 +231,8 @@ export default function HomePage() {
         onSelectChat={handleSelectChat}
         onNewChat={handleNewChat}
         currentChatId={currentChatId || undefined}
+        onChatDeleted={handleChatDeleted}
+        refreshTrigger={sidebarRefreshTrigger}
       />
       
       {/* background */}
@@ -184,8 +250,15 @@ export default function HomePage() {
         
         <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
         
-        {/* Espacio vacío para mantener el logo centrado */}
-        <div className="w-[120px]"></div>
+        {/* Indicador de guardado sutil */}
+        <div className="w-[120px] flex justify-end">
+          {isSaving && (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="animate-spin rounded-full h-3 w-3 border-b border-primary-violet"></div>
+              <span>Guardando</span>
+            </div>
+          )}
+        </div>
       </nav>
       <main className="flex min-h-screen w-2/3 flex-col items-center justify-start overflow-y-auto">
         <div className="flex w-full flex-col space-y-4 pt-28 pb-40">
@@ -290,13 +363,13 @@ export default function HomePage() {
           }`}>
             <form
               onSubmit={
-                // If there are no messages, awit 200ms before submitting to allow transition to bottom
+                // If there are no messages, wait 200ms before submitting to allow transition to bottom
                 messages.length === 0 
                   ? (e) => {
                       e.preventDefault();
-                      setTimeout(() => handleSubmit(), 200);
+                      setTimeout(() => handleFormSubmit(e), 200);
                     } 
-                  : handleSubmit
+                  : handleFormSubmit
               }
               className="mb-4 flex w-full flex-row items-center gap-3"
             >

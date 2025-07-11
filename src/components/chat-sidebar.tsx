@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getChatHistory, deleteChatHistory, type ChatHistory } from '~/lib/chat-history';
-import { MessageSquare, Trash2, Plus, Clock, X } from 'lucide-react';
+import { getChatHistory, deleteChatHistory, generateChatTitle, type ChatHistory } from '~/lib/chat-history';
+import { MessageSquare, Trash2, Plus, Clock, X, RefreshCw } from 'lucide-react';
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -10,6 +10,8 @@ interface ChatSidebarProps {
   onSelectChat: (chat: ChatHistory) => void;
   onNewChat: () => void;
   currentChatId?: string;
+  onChatDeleted?: (chatId: string) => void;
+  refreshTrigger?: number;
 }
 
 export default function ChatSidebar({ 
@@ -17,16 +19,19 @@ export default function ChatSidebar({
   onClose, 
   onSelectChat, 
   onNewChat, 
-  currentChatId 
+  currentChatId,
+  onChatDeleted,
+  refreshTrigger 
 }: ChatSidebarProps) {
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [regeneratingTitle, setRegeneratingTitle] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadChatHistory();
     }
-  }, [isOpen]);
+  }, [isOpen, refreshTrigger]);
 
   const loadChatHistory = async () => {
     try {
@@ -40,11 +45,52 @@ export default function ChatSidebar({
     }
   };
 
+  const handleRegenerateTitle = async (chat: ChatHistory, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (chat.messages.length < 2) return;
+    
+    setRegeneratingTitle(chat.id);
+    try {
+      // Convert ChatHistory messages to Message format for title generation
+      const messages = chat.messages.map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: new Date(msg.createdAt)
+      }));
+      
+      const newTitle = await generateChatTitle(messages);
+      
+      // Update the title in the database
+      const response = await fetch(`/api/chats/${chat.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+      });
+      
+      if (response.ok) {
+        // Update the local state
+        setChatHistory(prev => prev.map(c => 
+          c.id === chat.id ? { ...c, title: newTitle } : c
+        ));
+      }
+    } catch (error) {
+      console.error('Error regenerating title:', error);
+    } finally {
+      setRegeneratingTitle(null);
+    }
+  };
+
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await deleteChatHistory(chatId);
       setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+      
+      // If we deleted the current chat, notify parent
+      if (chatId === currentChatId && onChatDeleted) {
+        onChatDeleted(chatId);
+      }
     } catch (error) {
       console.error('Error deleting chat:', error);
     }
@@ -149,13 +195,28 @@ export default function ChatSidebar({
                     </p>
                   </div>
                   
-                  <button
-                    onClick={(e) => handleDeleteChat(chat.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded-lg transition-all duration-200"
-                    title="Eliminar chat"
-                  >
-                    <Trash2 size={14} className="text-red-500" />
-                  </button>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {chat.messages.length >= 2 && (
+                      <button
+                        onClick={(e) => handleRegenerateTitle(chat, e)}
+                        disabled={regeneratingTitle === chat.id}
+                        className="p-1 hover:bg-blue-100 rounded-lg transition-all duration-200"
+                        title="Regenerar título"
+                      >
+                        <RefreshCw 
+                          size={14} 
+                          className={`text-blue-500 ${regeneratingTitle === chat.id ? 'animate-spin' : ''}`} 
+                        />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => handleDeleteChat(chat.id, e)}
+                      className="p-1 hover:bg-red-100 rounded-lg transition-all duration-200"
+                      title="Eliminar chat"
+                    >
+                      <Trash2 size={14} className="text-red-500" />
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Preview of first message */}

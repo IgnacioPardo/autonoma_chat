@@ -13,14 +13,54 @@ export interface ChatHistory {
   }[]
 }
 
+export async function generateChatTitle(messages: Message[]): Promise<string> {
+  try {
+    const response = await fetch('/api/chat/title', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ messages }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to generate title')
+    }
+
+    const { title } = await response.json()
+    return title || generateFallbackTitle(messages)
+  } catch (error) {
+    console.error('Error generating AI title:', error)
+    return generateFallbackTitle(messages)
+  }
+}
+
+function generateFallbackTitle(messages: Message[]): string {
+  const firstUserMessage = messages.find(msg => msg.role === 'user')
+  if (firstUserMessage) {
+    // Take first 40 characters and add ellipsis if longer
+    const title = firstUserMessage.content.slice(0, 40)
+    return title.length < firstUserMessage.content.length ? `${title}...` : title
+  }
+  return `Chat ${new Date().toLocaleDateString()}`
+}
+
 export async function saveChatHistory(messages: Message[], title?: string): Promise<ChatHistory> {
+  // Generate title using AI if not provided and we have enough messages
+  let chatTitle = title
+  if (!chatTitle && messages.length >= 2) {
+    chatTitle = await generateChatTitle(messages)
+  } else if (!chatTitle) {
+    chatTitle = generateFallbackTitle(messages)
+  }
+
   const response = await fetch('/api/chats', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      title: title || generateChatTitle(messages),
+      title: chatTitle,
       messages: messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -84,14 +124,4 @@ export async function deleteChatHistory(id: string): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to delete chat')
   }
-}
-
-function generateChatTitle(messages: Message[]): string {
-  const firstUserMessage = messages.find(msg => msg.role === 'user')
-  if (firstUserMessage) {
-    // Take first 50 characters and add ellipsis if longer
-    const title = firstUserMessage.content.slice(0, 50)
-    return title.length < firstUserMessage.content.length ? `${title}...` : title
-  }
-  return `Chat ${new Date().toLocaleDateString()}`
 }
