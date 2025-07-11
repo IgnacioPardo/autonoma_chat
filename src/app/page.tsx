@@ -110,7 +110,7 @@ export default function HomePage() {
           {/* Input Form - posición dinámica basada en si hay mensajes */}
           <div className={`fixed w-2/3 p-4 transition-all duration-1000 ease-in-out ${
             messages.length === 0 
-              ? "bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
+              ? "bottom-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
               : "bottom-0 left-1/2 transform -translate-x-1/2"
           }`}>
             <form
@@ -126,7 +126,11 @@ export default function HomePage() {
               className="mb-4 flex w-full flex-row items-center gap-3"
             >
               <input
-                className="focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs"
+                className={
+                  (messages.length === 0) 
+                  ? "focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs bg-white/75"
+                  : "focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs"
+                }
                 value={input}
                 placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
                 onChange={handleInputChange}
@@ -134,11 +138,7 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                className={
-                  (messages.length === 0)
-                    ? "bg-gray-100 font-bold border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-primary-violet shadow-lg transition-shadow duration-200 hover:shadow-xl cursor-pointer hover:scale-105 transition-transform"
-                  : "from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl"
-                }
+                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl"
               >
                 Enviar
               </button>
