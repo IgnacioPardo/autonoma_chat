@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  
+  /* Primary colors matching the gradient design */
+  --color-primary-blue: #9b72f7;
+  --color-primary-indigo: #6366f1;
+  --color-primary-violet: #8b5cf6;
+
+  /* Background colors */
+  --color-background-light: #f3f4f6;
+  --color-background-medium: #e5e7eb;
+  --color-background-dark: #111827;
+
+  /* Border colors */
+  --color-border-violet: #8d4dd1;
+}
