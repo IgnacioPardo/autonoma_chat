@@ -15,7 +15,7 @@ export default function MessageActions({
 }: MessageActionsProps) {
   return (
     <div
-      className={`absolute ${isUserMessage ? "-left-12" : "-right-12"} top-2 flex flex-col gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100`}
+      className={`absolute ${isUserMessage ? "left-4" : "right-4"} -bottom-10 flex flex-row gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100`}
     >
       <button
         onClick={() => onCopy(messageText)}

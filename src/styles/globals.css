@@ -4,6 +4,9 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   
+
+  /* From https: //www.getautonoma.com/ */
+
   /* Primary colors matching the gradient design */
   --color-primary-blue: #9b72f7;
   --color-primary-indigo: #6366f1;
@@ -16,4 +19,46 @@
 
   /* Border colors */
   --color-border-violet: #8d4dd1;
+}
+
+@utility mask-gradient {
+  mask: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0));
+}
+
+/* Custom styles for markdown in chat bubbles */
+.prose {
+  --tw-prose-body: inherit;
+  --tw-prose-headings: inherit;
+  --tw-prose-lead: inherit;
+  --tw-prose-links: inherit;
+  --tw-prose-bold: inherit;
+  --tw-prose-counters: inherit;
+  --tw-prose-bullets: inherit;
+  --tw-prose-hr: inherit;
+  --tw-prose-quotes: inherit;
+  --tw-prose-quote-borders: inherit;
+  --tw-prose-captions: inherit;
+  --tw-prose-code: inherit;
+  --tw-prose-pre-code: inherit;
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-th-borders: inherit;
+  --tw-prose-td-borders: inherit;
+}
+
+.prose code {
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
+.prose pre {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  padding: 0;
+  background-color: transparent;
 }

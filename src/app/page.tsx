@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
+import Markdown from 'react-markdown'
 
 export default function HomePage() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -40,13 +41,13 @@ export default function HomePage() {
   return (
     <body className="flex min-h-screen w-full flex-col items-center justify-center">
       {/* background */}
-      <div className="fixed inset-0 bg-[url('/background.avif')] bg-cover bg-center bg-no-repeat"></div>
+      <div className="fixed inset-0 bg-[url('/background.avif')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
       {/* NavBar */}
       <nav className="fixed top-0 z-10 flex w-full items-center justify-center bg-white p-8 shadow-md">
         <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
       </nav>
       <main className="flex min-h-screen w-2/3 flex-col items-center justify-start overflow-y-auto">
-        <div className="flex w-full flex-col space-y-4 pt-24 pb-24">
+        <div className="flex w-full flex-col space-y-4 pt-24 pb-40">
           {messages.map((message) => {
             const messageText = message.parts
               .filter((part) => part.type === "text")
@@ -71,9 +72,15 @@ export default function HomePage() {
                         return (
                           <div
                             key={`${message.id}-${i}`}
-                            className="whitespace-pre-wrap"
+                            className={`prose prose-sm max-w-none ${
+                              message.role === "user" 
+                                ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
+                                : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
+                            }`}
                           >
-                            {part.text}
+                            <Markdown>
+                              {part.text}
+                            </Markdown>
                           </div>
                         );
                     }
@@ -91,26 +98,32 @@ export default function HomePage() {
             );
           })}
 
-          <div className="fixed bottom-0 w-full p-4 backdrop-blur-sm">
-            <form
-              onSubmit={handleSubmit}
-              className="mb-4 flex w-2/3 flex-row items-center gap-3"
-            >
-              <input
-                className="focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none"
-                value={input}
-                placeholder="Escribe tu mensaje..."
-                onChange={handleInputChange}
-              />
+        </div>
+        
+        {/* Background Blur behind input */}
+        <div 
+          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient"
+        ></div>
+        
+        <div className="fixed bottom-0 w-2/3 p-4">
+          <form
+            onSubmit={handleSubmit}
+            className="mb-4 flex w-full flex-row items-center gap-3"
+          >
+            <input
+              className="focus:ring-primary-violet h-[56px] flex-1 rounded-2xl border border-gray-300 p-4 shadow-sm focus:border-transparent focus:ring-2 focus:outline-none backdrop-blur-xs"
+              value={input}
+              placeholder="Escribe tu mensaje..."
+              onChange={handleInputChange}
+            />
 
-              <button
-                type="submit"
-                className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl"
-              >
-                Enviar
-              </button>
-            </form>
-          </div>
+            <button
+              type="submit"
+              className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-6 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl"
+            >
+              Enviar
+            </button>
+          </form>
         </div>
       </main>
     </body>
