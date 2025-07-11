@@ -9,6 +9,7 @@ export interface ChatHistory {
     id: string
     role: string
     content: string
+    position: number
     createdAt: string
   }[]
 }
@@ -46,13 +47,26 @@ function generateFallbackTitle(messages: Message[]): string {
 }
 
 export async function saveChatHistory(messages: Message[], title?: string): Promise<ChatHistory> {
+  console.log('saveChatHistory called with messages:', messages);
+  
   // Generate title using AI if not provided and we have enough messages
   let chatTitle = title
   if (!chatTitle && messages.length >= 2) {
+    // console.log('Generating AI title...');
     chatTitle = await generateChatTitle(messages)
+    // console.log('Generated AI title:', chatTitle);
   } else if (!chatTitle) {
     chatTitle = generateFallbackTitle(messages)
+    // console.log('Using fallback title:', chatTitle);
   }
+
+  const messagesToSave = messages.map((msg, index) => ({
+    role: msg.role,
+    content: msg.content,
+    position: index
+  }));
+  
+  // console.log('Messages to save:', messagesToSave);
 
   const response = await fetch('/api/chats', {
     method: 'POST',
@@ -61,39 +75,61 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
     },
     body: JSON.stringify({
       title: chatTitle,
-      messages: messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      messages: messagesToSave
     }),
   })
 
   if (!response.ok) {
+    console.error('Failed to save chat, response:', response.status, response.statusText);
     throw new Error('Failed to save chat history')
   }
 
-  return response.json()
+  const result = await response.json();
+  // console.log('Saved chat result:', result);
+  return result;
 }
 
 export async function updateChatHistory(chatId: string, messages: Message[]): Promise<ChatHistory> {
+  // console.log('updateChatHistory called with chatId:', chatId, 'messages:', messages);
+  
+  // Filter out empty messages and ensure content is valid
+  const validMessages = messages.filter(msg => 
+    msg && 
+    msg.content && 
+    typeof msg.content === 'string' && 
+    msg.content.trim().length > 0 &&
+    msg.role &&
+    (msg.role === 'user' || msg.role === 'assistant')
+  );
+  
+  const messagesToSave = validMessages.map((msg, index) => ({
+    role: msg.role,
+    content: msg.content.trim(),
+    position: index
+  }));
+  
+  // console.log('Original messages count:', messages.length);
+  // console.log('Valid messages count:', validMessages.length);
+  // console.log('Messages to update (filtered):', messagesToSave);
+
   const response = await fetch(`/api/chats/${chatId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      messages: messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      messages: messagesToSave
     }),
   })
 
   if (!response.ok) {
+    console.error('Failed to update chat, response:', response.status, response.statusText);
     throw new Error('Failed to update chat history')
   }
 
-  return response.json()
+  const result = await response.json();
+  // console.log('Updated chat result:', result);
+  return result;
 }
 
 export async function getChatHistory(): Promise<ChatHistory[]> {

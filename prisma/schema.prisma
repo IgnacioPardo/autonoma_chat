@@ -24,6 +24,7 @@ model Message {
   id        String   @id @default(cuid())
   role      String   // "user" or "assistant"
   content   String
+  position  Int      // Order/index in the conversation
   createdAt DateTime @default(now())
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)

@@ -5,89 +5,128 @@ import { useChat } from "@ai-sdk/react";
 import MessageActions from "~/components/message-actions";
 import ChatSidebar from "~/components/chat-sidebar";
 import NavBar from "~/components/navbar";
+import ImageUpload from "~/components/image-upload";
 import Markdown from 'react-markdown';
 import { Send, Pencil, Check, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { saveChatHistory, updateChatHistory, getChatById, generateChatTitle, type ChatHistory } from '~/lib/chat-history';
+import { useState, useEffect, useRef } from 'react';
 import type { Message } from 'ai';
+import type { ChatHistory } from '~/lib/chat-history';
+import { saveChatAfterMessage, processImageAttachments } from '~/lib/chat-utils';
+import { saveEditedMessage } from '~/lib/message-edit';
+import { copyToClipboard, shareText } from '~/lib/clipboard-utils';
+import { handleSelectChat, handleChatDeleted, handleNewChat } from '~/lib/chat-handlers';
 
 export default function HomePage() {
-  const { messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
-    onFinish: async (message) => {
-      // Save chat when AI response is complete
-      await saveChatAfterMessage([...messages, message]);
-    }
-  });
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [lastSavedMessageCount, setLastSavedMessageCount] = useState(0);
 
-  // Helper function to save chat after key events
-  const saveChatAfterMessage = async (messagesToSave: Message[]) => {
-    if (messagesToSave.length === 0 || isSaving) return;
-    
-    setIsSaving(true);
-    try {
-      if (currentChatId) {
-        // Verify the chat still exists before updating
-        try {
-          await updateChatHistory(currentChatId, messagesToSave);
-          
-          // If this is the first AI response (messages length is 2), regenerate title
-          if (messagesToSave.length === 2 && messagesToSave[1]?.role === 'assistant') {
-            try {
-              const newTitle = await generateChatTitle(messagesToSave);
-              // Update the chat with the new title
-              const response = await fetch(`/api/chats/${currentChatId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle })
-              });
-              if (!response.ok) {
-                console.warn('Failed to update chat title');
-              }
-            } catch (titleError) {
-              console.warn('Failed to generate new title:', titleError);
-            }
-          }
-        } catch (updateError) {
-          // If update fails, create a new chat instead
-          console.log('Chat no longer exists, creating new one');
-          const savedChat = await saveChatHistory(messagesToSave);
-          setCurrentChatId(savedChat.id);
+  // Use ref to always have the latest currentChatId in callbacks
+  const currentChatIdRef = useRef(currentChatId);
+  
+  // Keep the ref in sync with state
+  useEffect(() => {
+    currentChatIdRef.current = currentChatId;
+    // console.log('=== currentChatId state changed ===');
+    // console.log('Updated currentChatIdRef to:', currentChatId);
+    // console.log('Ref now contains:', currentChatIdRef.current);
+  }, [currentChatId]);
+
+  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput } = useChat({
+    onFinish: async (message) => {
+      
+      // Use setTimeout to ensure messages state is updated
+      setTimeout(async () => {
+        // Use the ref to get the most up-to-date currentChatId
+        const actualCurrentChatId = currentChatIdRef.current;
+        
+        const inputMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'user',
+          content: 
+            editingMessageId 
+            ? editText.trim() || input 
+            : ((
+            messages && (messages.length > 0) && (messages[messages.length - 1]) && ((messages[messages.length - 1]) !== undefined) && ((messages[messages.length - 1])?.role === 'user') && messages[messages.length - 1]?.content
+          )
+            ? (messages[messages.length - 1]?.content) || input
+            : input),
+          createdAt: new Date()
+        };
+        let editingIndex = -1;
+        if (editingMessageId) {
+          editingIndex = messages.findIndex(m => m.id === editingMessageId);
         }
-      } else {
-        const savedChat = await saveChatHistory(messagesToSave);
-        setCurrentChatId(savedChat.id);
-        setSidebarRefreshTrigger(prev => prev + 1); // Trigger sidebar refresh
-      }
-    } catch (error) {
-      console.error('Error saving chat:', error);
-    } finally {
-      setTimeout(() => setIsSaving(false), 500); // Small delay to show saving state
+
+        const completeConversation = [...messages.filter(
+          (msg) => {
+          if (editingMessageId) {
+            // find all messages up to the edited one not by id but by position
+            // dont use id for position, use index
+            let msgIndex = messages.findIndex(m => m.id === msg.id);
+            return msgIndex < editingIndex;
+          }
+          return true
+        }
+        ), inputMessage, message];
+        
+        await saveChatAfterMessage(completeConversation, {
+          currentChatId: actualCurrentChatId,
+          setCurrentChatId,
+          setSidebarRefreshTrigger,
+          setIsSaving
+        });
+        setLastSavedMessageCount(messages.length);
+      }, 100);
+    }
+  });
+
+
+  useEffect(() => {
+    console.log(messages);
+  }, [messages]);
+
+
+  const handleImageUpload = (file: File) => {
+    setUploadedImages(prev => [...prev, file]);
+  };
+
+  const handleImageRemove = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Custom form submit handler to handle images
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!input.trim() && uploadedImages.length === 0) return;
+    
+    if (uploadedImages.length > 0) {
+      // Process images for attachment
+      const attachments = await processImageAttachments(uploadedImages);
+
+      // Clear images after processing
+      setUploadedImages([]);
+      
+      // Submit with attachments
+      append({
+        content: input,
+        role: 'user',
+        experimental_attachments: attachments,
+      });
+      setInput('');
+    } else {
+      // Use default handleSubmit for text-only messages
+      handleSubmit(e);
     }
   };
 
-  // Custom form submit handler to save after user message
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    if (!input.trim()) return;
-    
-    // Call the original handleSubmit
-    handleSubmit(e);
-    
-    // Save chat after user message is added
-    // We need to wait a bit for the message to be added to the state
-    setTimeout(async () => {
-      // Get the updated messages state (should include the new user message)
-      const currentMessages = [...messages];
-      if (currentMessages.length > 0) {
-        await saveChatAfterMessage(currentMessages);
-      }
-    }, 500);
-  };
+
 
   const startEdit = (messageId: string, currentText: string) => {
     setEditingMessageId(messageId);
@@ -100,127 +139,48 @@ export default function HomePage() {
   };
 
   const saveEdit = async (messageId: string) => {
-    if (!editText.trim()) {
-      cancelEdit();
-      return;
-    }
-
-    // Find the index of the edited message
-    const messageIndex = messages.findIndex(msg => msg.id === messageId);
-    if (messageIndex === -1) return;
-
-    // Update the message text
-    const updatedMessages = messages.map((message, index) => {
-      if (index === messageIndex) {
-        return {
-          ...message,
-          content: editText.trim()
-        };
-      }
-      return message;
+    await saveEditedMessage(messageId, editText, messages, {
+      currentChatId,
+      setCurrentChatId,
+      setMessages,
+      setEditingMessageId,
+      setEditText,
+      reload,
+      setSidebarRefreshTrigger,
+      setIsSaving,
     });
-
-    // Keep only messages up to and including the edited one
-    const newMessages = updatedMessages.slice(0, messageIndex + 1);
-    
-    // Update the messages state
-    setMessages(newMessages);
-    
-    // Clear editing state
-    setEditingMessageId(null);
-    setEditText("");
-
-    // Save to database
-    if (currentChatId) {
-      try {
-        await updateChatHistory(currentChatId, newMessages);
-      } catch (error) {
-        console.error('Error updating chat:', error);
-        // If update fails, try creating a new chat
-        try {
-          const savedChat = await saveChatHistory(newMessages);
-          setCurrentChatId(savedChat.id);
-        } catch (saveError) {
-          console.error('Error creating new chat:', saveError);
-        }
-      }
-    } else {
-      // Create new chat if no current chat ID
-      try {
-        const savedChat = await saveChatHistory(newMessages);
-        setCurrentChatId(savedChat.id);
-      } catch (error) {
-        console.error('Error creating new chat:', error);
-      }
-    }
-
-    // If this was a user message, trigger regeneration
-    if (messages[messageIndex]?.role === 'user') {
-      setTimeout(() => {
-        reload();
-      }, 100);
-    }
   };
 
-  const handleSelectChat = async (chat: ChatHistory) => {
-    try {
-      // Convert ChatHistory messages to the format expected by useChat
-      const convertedMessages: Message[] = chat.messages.map((msg) => ({
-        id: msg.id,
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-        createdAt: new Date(msg.createdAt)
-      }));
-      
-      setMessages(convertedMessages);
-      setCurrentChatId(chat.id);
-    } catch (error) {
-      console.error('Error loading chat:', error);
-    }
+  const onSelectChat = async (chat: ChatHistory) => {
+    await handleSelectChat(chat, {
+      setMessages,
+      setCurrentChatId,
+      setLastSavedMessageCount,
+      setEditingMessageId,
+      setEditText
+    });
   };
 
-  const handleChatDeleted = (deletedChatId: string) => {
-    // If the deleted chat was the current one, reset to new chat state
-    if (deletedChatId === currentChatId) {
-      setCurrentChatId(null);
-      // Don't clear messages here as the user might still be in a conversation
-    }
+  const onChatDeleted = (deletedChatId: string) => {
+    handleChatDeleted(deletedChatId, currentChatId, setCurrentChatId);
   };
 
-  const handleNewChat = () => {
-    setMessages([]);
-    setCurrentChatId(null);
-    setEditingMessageId(null);
-    setEditText("");
+  const onNewChat = () => {
+    handleNewChat({
+      setMessages,
+      setCurrentChatId,
+      setEditingMessageId,
+      setEditText,
+      setLastSavedMessageCount
+    });
   };
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (err) {
-      console.error("Error copying text: ", err);
-    }
+  const copyToClipboardHandler = async (text: string) => {
+    await copyToClipboard(text);
   };
 
-  const shareText = async (text: string) => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Mensaje de Autonoma Chat",
-          text: text,
-        });
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-          return;
-        }
-        console.error("Error sharing: ", err);
-        // Fallback: copiar al clipboard
-        await copyToClipboard(text);
-      }
-    } else {
-      // Fallback: copiar al clipboard
-      await copyToClipboard(text);
-    }
+  const shareTextHandler = async (text: string) => {
+    await shareText(text);
   };
 
   return (
@@ -229,10 +189,10 @@ export default function HomePage() {
       <ChatSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
+        onSelectChat={onSelectChat}
+        onNewChat={onNewChat}
         currentChatId={currentChatId || undefined}
-        onChatDeleted={handleChatDeleted}
+        onChatDeleted={onChatDeleted}
         refreshTrigger={sidebarRefreshTrigger}
       />
       
@@ -319,8 +279,8 @@ export default function HomePage() {
                       <MessageActions
                         messageText={messageText}
                         isUserMessage={message.role === "user"}
-                        onCopy={copyToClipboard}
-                        onShare={shareText}
+                        onCopy={copyToClipboardHandler}
+                        onShare={shareTextHandler}
                         onEdit={message.role === "user" ? () => startEdit(message.id, messageText) : undefined}
                       />
                     </>
@@ -356,8 +316,13 @@ export default function HomePage() {
                     } 
                   : handleFormSubmit
               }
-              className="mb-4 flex w-full flex-row items-center gap-3"
+              className="mb-4 flex w-full flex-col gap-3"
             >
+              {/* Image Upload Component */}
+              <ImageUpload onImageAdd={handleImageUpload} images={uploadedImages} onImageRemove={handleImageRemove} />
+              
+              {/* Input Row */}
+              <div className="flex w-full flex-row items-center gap-3">
               <div className="relative flex-1">
                 <Pencil 
                   size={18} 
@@ -387,6 +352,7 @@ export default function HomePage() {
                 <Send size={20} />
                 <span className="hidden sm:inline">Enviar</span>
               </button>
+              </div>
             </form>
           </div>
         </>

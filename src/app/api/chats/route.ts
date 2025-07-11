@@ -34,14 +34,19 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         messages: {
-          create: messages.map((message: { role: string; content: string }) => ({
+          create: messages.map((message: { role: string; content: string; position?: number }, index: number) => ({
             role: message.role,
-            content: message.content
+            content: message.content,
+            position: message.position ?? index
           }))
         }
       },
       include: {
-        messages: true
+        messages: {
+          orderBy: {
+            createdAt: 'asc'
+          }
+        }
       }
     })
 
