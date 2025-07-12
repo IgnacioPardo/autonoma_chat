@@ -1,5 +1,6 @@
 import type { Message } from 'ai';
 import type { ChatHistory } from './chat-history';
+import { getChatById } from './chat-history';
 import { toastUtils } from './toast-utils';
 
 export interface ChatStateHandlers {
@@ -20,14 +21,27 @@ export async function handleSelectChat(
   
   try {
     console.log('Loading chat with attachments:', chat.id);
-    console.log('Chat messages:', chat.messages.map(m => ({
-      role: m.role,
-      content: m.content.substring(0, 30) + '...',
-      attachmentCount: m.attachments?.length ?? 0
-    })));
+    
+    // Always fetch the full chat data from the API to ensure attachments are included
+    const fullChat = await getChatById(chat.id);
+    
+    console.log('Full chat loaded from API:', {
+      id: fullChat.id,
+      messageCount: fullChat.messages.length,
+      messagesWithAttachments: fullChat.messages.map(m => ({
+        role: m.role,
+        content: m.content.substring(0, 30) + '...',
+        attachmentCount: m.attachments?.length ?? 0,
+        attachmentDetails: m.attachments?.map(att => ({
+          name: att.name,
+          contentType: att.contentType,
+          urlLength: att.url?.length ?? 0
+        })) ?? []
+      }))
+    });
     
     // Convert ChatHistory messages to the format expected by useChat
-    const convertedMessages: Message[] = chat.messages.map((msg) => ({
+    const convertedMessages: Message[] = fullChat.messages.map((msg) => ({
       id: msg.id,
       role: msg.role as 'user' | 'assistant',
       content: msg.content,
@@ -43,11 +57,17 @@ export async function handleSelectChat(
     console.log('Converted messages with attachments:', convertedMessages.map(m => ({
       role: m.role,
       content: m.content.substring(0, 30) + '...',
-      hasAttachments: !!m.experimental_attachments?.length
+      hasAttachments: !!m.experimental_attachments?.length,
+      attachmentCount: m.experimental_attachments?.length ?? 0,
+      attachmentDetails: m.experimental_attachments?.map(att => ({
+        name: att.name,
+        contentType: att.contentType,
+        urlLength: att.url?.length ?? 0
+      })) ?? []
     })));
     
     setMessages(convertedMessages);
-    setCurrentChatId(chat.id);
+    setCurrentChatId(fullChat.id);
   } catch (error) {
     console.error('Error loading chat:', error);
     toastUtils.apiError(error, 'Error al cargar el chat');

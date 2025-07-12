@@ -13,6 +13,9 @@ export async function GET(
       where: { id },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc'
           }
@@ -113,6 +116,9 @@ export async function PUT(
       },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc' // Use createdAt instead of position for now
           }
@@ -121,6 +127,15 @@ export async function PUT(
     })
 
     console.log('PUT endpoint - Updated chat successfully with messages');
+    console.log('Updated chat result:', {
+      id: chat.id,
+      messageCount: chat.messages.length,
+      messagesWithAttachments: chat.messages.map(m => ({
+        id: m.id,
+        role: m.role,
+        attachmentCount: m.attachments?.length ?? 0
+      }))
+    });
 
     return NextResponse.json(chat)
   } catch (error) {
@@ -149,6 +164,9 @@ export async function PATCH(
       },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc'
           }

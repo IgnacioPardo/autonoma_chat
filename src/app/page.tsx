@@ -6,7 +6,7 @@ import NavBar from "~/components/navbar";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
 import { useState, useEffect, useRef } from 'react';
-import type { Message, Attachment } from 'ai';
+import type { Attachment } from 'ai';
 import type { ChatHistory } from '~/lib/chat-history';
 import { saveChatAfterMessage, processFileAttachments } from '~/lib/chat-utils';
 import { saveEditedMessage } from '~/lib/message-edit';
@@ -25,80 +25,90 @@ export default function HomePage() {
 
   // Use ref to always have the latest currentChatId in callbacks
   const currentChatIdRef = useRef(currentChatId);
+  // Refs to hold current state values for callbacks
+  const messagesRef = useRef<ReturnType<typeof useChat>['messages']>([]);
+  const isLoadingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+
+  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
+    onFinish: (message) => {
+      console.log('=== onFinish: Assistant response completed ===');
+      console.log('Assistant message:', {
+        role: message.role,
+        content: message.content.substring(0, 30) + '...'
+      });
+      
+      // Mark that we have a pending save
+      // The useEffect will handle the actual saving when loading finishes
+      pendingSaveRef.current = true;
+      console.log('🔄 Marked conversation for saving when loading finishes');
+    },
+    onError: (error) => {
+      toastUtils.apiError(error, 'Error al enviar el mensaje');
+    }
+  });  
+  useEffect(() => {
+    const wasLoading = isLoadingRef.current;
+    const isNowLoading = isLoading;
+    isLoadingRef.current = isLoading;
+    
+    // If we just finished loading (was loading, now not loading)
+    // and we have a pending save, save the complete conversation
+    if (wasLoading && !isNowLoading && pendingSaveRef.current) {
+      pendingSaveRef.current = false;
+      
+      console.log('=== Loading finished, saving complete conversation ===');
+      console.log('Final messages count:', messages.length);
+      
+      const finalMessages = messages.map((msg, i) => ({
+        index: i,
+        role: msg.role,
+        content: msg.content.substring(0, 50) + '...',
+        hasAttachments: !!msg.experimental_attachments?.length,
+        attachmentCount: msg.experimental_attachments?.length ?? 0
+      }));
+      console.log('Final messages:', finalMessages);
+      
+      // Save the complete conversation
+      setTimeout(() => {
+        (async () => {
+          try {
+            await saveChatAfterMessage(messages, {
+              currentChatId: currentChatIdRef.current,
+              setCurrentChatId,
+              setSidebarRefreshTrigger,
+              setIsSaving
+            });
+            console.log('✅ Complete conversation saved successfully');
+          } catch (error) {
+            console.error('❌ Error saving complete conversation:', error);
+            toastUtils.apiError(error, 'Error al guardar el chat');
+          }
+        })().catch(console.error);
+      }, 100);
+    }
+  }, [isLoading, messages]);
   
-  // Keep the ref in sync with state
+  // Keep the refs in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+    console.log('=== Messages state updated ===');
+    console.log('Messages count:', messages.length);
+    console.log('Messages with attachments:', messages.map((m, i) => ({
+      index: i,
+      role: m.role,
+      content: m.content.substring(0, 30) + '...',
+      hasAttachments: !!m.experimental_attachments?.length,
+      attachmentCount: m.experimental_attachments?.length ?? 0
+    })));
+  }, [messages]);
+
   useEffect(() => {
     currentChatIdRef.current = currentChatId;
     // console.log('=== currentChatId state changed ===');
     // console.log('Updated currentChatIdRef to:', currentChatId);
     // console.log('Ref now contains:', currentChatIdRef.current);
   }, [currentChatId]);
-
-  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
-    onFinish: (message) => {
-      
-      // Use setTimeout to ensure messages state is updated
-      setTimeout(() => {
-        (async () => {
-          // Use the ref to get the most up-to-date currentChatId
-          const actualCurrentChatId = currentChatIdRef.current;
-        
-          const inputMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: 
-              editingMessageId 
-              ? editText.trim() ?? input 
-              : ((
-              messages && (messages.length > 0) && (messages[messages.length - 1]) && ((messages[messages.length - 1]) !== undefined) && ((messages[messages.length - 1])?.role === 'user') && messages[messages.length - 1]?.content
-            )
-              ? (messages[messages.length - 1]?.content) ?? input
-              : input),
-            createdAt: new Date()
-          };
-          let editingIndex = -1;
-          if (editingMessageId) {
-            editingIndex = messages.findIndex(m => m.id === editingMessageId);
-          }
-
-          const completeConversation = [...messages.filter(
-            (msg) => {
-            if (editingMessageId) {
-              // find all messages up to the edited one not by id but by position
-              // dont use id for position, use index
-              const msgIndex = messages.findIndex(m => m.id === msg.id);
-              return msgIndex < editingIndex;
-            }
-            return true
-          }
-          ), inputMessage, message];
-          
-          try {
-            await saveChatAfterMessage(completeConversation, {
-              currentChatId: actualCurrentChatId,
-              setCurrentChatId,
-              setSidebarRefreshTrigger,
-              setIsSaving
-            });
-            // toastUtils.success('Chat guardado');
-          } catch (error) {
-            toastUtils.apiError(error, 'Error al guardar el chat');
-          }
-        })().catch((error) => {
-          toastUtils.apiError(error, 'Error al procesar el mensaje');
-        });
-      }, 100);
-    },
-    onError: (error) => {
-      toastUtils.apiError(error, 'Error al enviar el mensaje');
-    }
-  });
-
-
-  useEffect(() => {
-    console.log(messages);
-  }, [messages]);
-
 
   const handleImageUpload = (file: File) => {
     console.log('Adding image to upload queue:', file.name, file.type, file.size);
@@ -150,15 +160,21 @@ export default function HomePage() {
       
       // Submit with attachments
       const messageToSend = {
-        content: input ?? "Imagen enviada", // Provide fallback text if input is empty
+        content: input ?? "Archivo enviado", // Provide fallback text if input is empty
         role: 'user' as const,
         experimental_attachments: attachments,
       };
       
+      console.log('=== MESSAGE TO SEND ===');
       console.log('Message to send:', {
         content: messageToSend.content,
         role: messageToSend.role,
-        attachmentCount: messageToSend.experimental_attachments.length
+        attachmentCount: messageToSend.experimental_attachments.length,
+        attachmentDetails: messageToSend.experimental_attachments.map(att => ({
+          name: att.name,
+          contentType: att.contentType,
+          urlLength: att.url?.length ?? 0
+        }))
       });
       
       void append(messageToSend);
@@ -257,7 +273,7 @@ export default function HomePage() {
         isSaving={isSaving}
       />
 
-      <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto">
+      <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden">
         <ChatMessages
           messages={messages}
           isLoading={isLoading}

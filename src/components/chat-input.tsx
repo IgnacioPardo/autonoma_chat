@@ -35,24 +35,26 @@ export default function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Accept images, CSV, and Markdown files
-      const isValidFile = file.type.startsWith('image/') || 
-                         file.type === 'text/csv' || 
-                         file.name.endsWith('.csv') ||
-                         file.type === 'text/markdown' || 
-                         file.name.endsWith('.md') || 
-                         file.name.endsWith('.markdown');
-      
-      if (isValidFile) {
-        handleImageUpload(file);
-        console.log('File added:', file.name, file.type);
-      } else {
-        alert('Solo se permiten archivos de imagen, CSV y Markdown.');
-      }
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Process each selected file
+      Array.from(files).forEach(file => {
+        // Accept images, CSV, and Markdown files
+        const isValidFile = file.type.startsWith('image/') || 
+                           file.type === 'text/csv' || 
+                           file.name.endsWith('.csv') ||
+                           file.type === 'text/markdown' || 
+                           file.name.endsWith('.md');
+        
+        if (isValidFile) {
+          handleImageUpload(file);
+          console.log('File added:', file.name, file.type);
+        } else {
+          alert(`Archivo no permitido: ${file.name}. Solo se permiten archivos de imagen, CSV y Markdown.`);
+        }
+      });
     }
-    // Reset input so same file can be selected again
+    // Reset input so same files can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -104,6 +106,7 @@ export default function ChatInput({
           accept="image/*,.csv,.md,.markdown,text/csv,text/markdown"
           onChange={handleFileSelect}
           className="hidden"
+          multiple
         />
         
         {/* File previews */}
@@ -175,12 +178,12 @@ export default function ChatInput({
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-violet z-20 transition-colors duration-300" 
               />
               
-              {/* Image upload button inside input on the right */}
+              {/* File upload button inside input on the right */}
               <button
                 type="button"
                 onClick={handleImageButtonClick}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors z-20"
-                title="Agregar imagen"
+                title="Agregar archivos (imágenes, CSV, Markdown)"
               >
                 <ImagePlus size={18} />
               </button>

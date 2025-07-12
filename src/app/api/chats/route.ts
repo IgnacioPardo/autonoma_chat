@@ -8,6 +8,9 @@ export async function GET() {
     const chats = await prisma.chat.findMany({
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc'
           }
@@ -67,6 +70,9 @@ export async function POST(request: NextRequest) {
       },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc'
           }
@@ -76,8 +82,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Created chat with ID:', chat.id);
     console.log('Chat created with', chat.messages.length, 'messages');
+    console.log('Messages with attachments:', chat.messages.map(m => ({
+      id: m.id,
+      role: m.role,
+      attachmentCount: m.attachments?.length ?? 0
+    })));
     
-    return NextResponse.json({ id: chat.id })
+    return NextResponse.json(chat)
   } catch (error) {
     console.error('Error creating chat:', error)
     return NextResponse.json(

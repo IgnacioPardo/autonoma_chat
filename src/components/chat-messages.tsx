@@ -83,7 +83,7 @@ export default function ChatMessages({
     }
   };
   return (
-    <div className="flex w-full flex-col space-y-12 sm:space-y-8 pt-28 pb-40">
+    <div className="flex w-full flex-col space-y-12 sm:space-y-8 pt-28 pb-40 overflow-x-hidden max-w-full">
       {messages.map((message) => {
         const messageText = message.content;
         // Check if message has attachments (images)
@@ -108,12 +108,12 @@ export default function ChatMessages({
         return (
           <div
             key={message.id}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex w-full overflow-x-hidden ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div className={`flex flex-col gap-2 max-w-xs lg:max-w-md ${message.role === "user" ? "items-end" : "items-start"}`}>
+            <div className={`flex flex-col gap-2 max-w-xs lg:max-w-md w-full ${message.role === "user" ? "items-end" : "items-start"}`}>
               {/* Text message bubble */}
               <div
-                className={`group relative rounded-2xl px-4 py-3 ${
+                className={`group relative rounded-2xl px-4 py-3 overflow-hidden break-words max-w-full ${
                   message.role === "user"
                     ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white"
                     : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm"
@@ -135,7 +135,7 @@ export default function ChatMessages({
                           cancelEdit();
                         }
                       }}
-                      className="w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-xs sm:text-sm leading-relaxed"
+                      className="w-full max-w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-xs sm:text-sm leading-relaxed break-words"
                       placeholder="Escribe tu mensaje editado..."
                       autoFocus
                     />
@@ -161,7 +161,7 @@ export default function ChatMessages({
                   // Normal message display
                   <>
                     <div
-                      className={`prose prose-sm sm:prose-base max-w-none ${
+                      className={`prose prose-sm sm:prose-base max-w-none overflow-hidden break-words ${
                         message.role === "user" 
                           ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
                           : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
