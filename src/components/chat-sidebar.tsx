@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getChatHistory, deleteChatHistory, generateChatTitle, type ChatHistory } from '~/lib/chat-history';
 import { MessageSquare, Trash2, Plus, Clock, X, RefreshCw } from 'lucide-react';
+import { toastUtils } from '~/lib/toast-utils';
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function ChatSidebar({
       setChatHistory(chats);
     } catch (error) {
       console.error('Error loading chat history:', error);
+      toastUtils.apiError(error, 'Error al cargar el historial de chats');
     } finally {
       setLoading(false);
     }
@@ -73,9 +75,13 @@ export default function ChatSidebar({
         setChatHistory(prev => prev.map(c => 
           c.id === chat.id ? { ...c, title: newTitle } : c
         ));
+        toastUtils.success('Título regenerado correctamente');
+      } else {
+        throw new Error('Error al actualizar el título');
       }
     } catch (error) {
       console.error('Error regenerating title:', error);
+      toastUtils.apiError(error, 'Error al regenerar el título');
     } finally {
       setRegeneratingTitle(null);
     }
@@ -91,8 +97,11 @@ export default function ChatSidebar({
       if (chatId === currentChatId && onChatDeleted) {
         onChatDeleted(chatId);
       }
+      
+      toastUtils.success('Chat eliminado correctamente');
     } catch (error) {
       console.error('Error deleting chat:', error);
+      toastUtils.apiError(error, 'Error al eliminar el chat');
     }
   };
 

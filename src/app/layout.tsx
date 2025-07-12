@@ -2,6 +2,7 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Autonoma Chat",
@@ -19,7 +20,33 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <>{children}</>
+      <body>
+        {children}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 5000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#ffffff',
+              },
+            },
+            error: {
+              duration: 8000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#ffffff',
+              },
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }

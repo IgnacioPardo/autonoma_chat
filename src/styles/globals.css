@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* Custom animations for loading indicator */
+@keyframes typing-pulse {
+  0%, 60%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  30% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-typing-pulse {
+  animation: typing-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-typing-pulse-delay-1 {
+  animation: typing-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-typing-pulse-delay-2 {
+  animation: typing-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";

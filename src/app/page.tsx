@@ -15,6 +15,7 @@ import { saveChatAfterMessage, processImageAttachments } from '~/lib/chat-utils'
 import { saveEditedMessage } from '~/lib/message-edit';
 import { copyToClipboard, shareText } from '~/lib/clipboard-utils';
 import { handleSelectChat, handleChatDeleted, handleNewChat } from '~/lib/chat-handlers';
+import { toastUtils } from '~/lib/toast-utils';
 
 export default function HomePage() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export default function HomePage() {
     // console.log('Ref now contains:', currentChatIdRef.current);
   }, [currentChatId]);
 
-  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
     onFinish: (message) => {
       
       // Use setTimeout to ensure messages state is updated
@@ -75,14 +76,24 @@ export default function HomePage() {
           }
           ), inputMessage, message];
           
-          await saveChatAfterMessage(completeConversation, {
-            currentChatId: actualCurrentChatId,
-            setCurrentChatId,
-            setSidebarRefreshTrigger,
-            setIsSaving
-          });
-        })().catch(console.error);
+          try {
+            await saveChatAfterMessage(completeConversation, {
+              currentChatId: actualCurrentChatId,
+              setCurrentChatId,
+              setSidebarRefreshTrigger,
+              setIsSaving
+            });
+            // toastUtils.success('Chat guardado');
+          } catch (error) {
+            toastUtils.apiError(error, 'Error al guardar el chat');
+          }
+        })().catch((error) => {
+          toastUtils.apiError(error, 'Error al procesar el mensaje');
+        });
       }, 100);
+    },
+    onError: (error) => {
+      toastUtils.apiError(error, 'Error al enviar el mensaje');
     }
   });
 
@@ -180,16 +191,21 @@ export default function HomePage() {
   };
 
   const saveEdit = async (messageId: string) => {
-    await saveEditedMessage(messageId, editText, messages, {
-      currentChatId,
-      setCurrentChatId,
-      setMessages,
-      setEditingMessageId,
-      setEditText,
-      reload,
-      setSidebarRefreshTrigger,
-      setIsSaving,
-    });
+    try {
+      await saveEditedMessage(messageId, editText, messages, {
+        currentChatId,
+        setCurrentChatId,
+        setMessages,
+        setEditingMessageId,
+        setEditText,
+        reload,
+        setSidebarRefreshTrigger,
+        setIsSaving,
+      });
+      toastUtils.success('Mensaje editado correctamente');
+    } catch (error) {
+      toastUtils.apiError(error, 'Error al editar el mensaje');
+    }
   };
 
   const onSelectChat = async (chat: ChatHistory) => {
@@ -223,7 +239,7 @@ export default function HomePage() {
   };
 
   return (
-    <body className="flex min-h-screen w-full flex-col items-center justify-center">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center">
       {/* Chat Sidebar */}
       <ChatSidebar
         isOpen={sidebarOpen}
@@ -376,6 +392,22 @@ export default function HomePage() {
             );
           })}
 
+          {/* Loading indicator when assistant is typing */}
+          {isLoading && (
+            <div className="flex justify-start mb-4">
+              <div className="flex flex-col gap-2 max-w-xs lg:max-w-md items-start">
+                <div className="flex items-center gap-3 bg-gray-100 text-black p-4 rounded-3xl rounded-bl-lg shadow-lg">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-pulse"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-pulse-delay-1"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-pulse-delay-2"></div>
+                  </div>
+                  <span className="text-sm text-gray-600">Autonoma está escribiendo...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
         
         <>
@@ -485,6 +517,6 @@ export default function HomePage() {
           </div>
         </>
       </main>
-    </body>
+    </div>
   );
 }

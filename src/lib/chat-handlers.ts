@@ -1,5 +1,6 @@
 import type { Message } from 'ai';
 import type { ChatHistory } from './chat-history';
+import { toastUtils } from './toast-utils';
 
 export interface ChatStateHandlers {
   setMessages: (messages: Message[]) => void;
@@ -49,6 +50,7 @@ export async function handleSelectChat(
     setCurrentChatId(chat.id);
   } catch (error) {
     console.error('Error loading chat:', error);
+    toastUtils.apiError(error, 'Error al cargar el chat');
   }
 }
 
