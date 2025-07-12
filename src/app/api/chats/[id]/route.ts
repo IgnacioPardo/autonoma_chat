@@ -13,9 +13,6 @@ export async function GET(
       where: { id },
       include: {
         messages: {
-          include: {
-            attachments: true
-          },
           orderBy: {
             createdAt: 'asc'
           }
@@ -116,9 +113,6 @@ export async function PUT(
       },
       include: {
         messages: {
-          include: {
-            attachments: true
-          },
           orderBy: {
             createdAt: 'asc' // Use createdAt instead of position for now
           }

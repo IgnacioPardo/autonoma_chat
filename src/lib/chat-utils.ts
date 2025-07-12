@@ -1,4 +1,5 @@
 import type { Message } from 'ai';
+import type { Attachment } from '~/types/chat';
 import { saveChatHistory, updateChatHistory, generateChatTitle } from './chat-history';
 
 export interface ChatSaveOptions {
@@ -81,10 +82,10 @@ export async function saveChatAfterMessage(
 /**
  * Converts uploaded files to base64 attachments for multimodal chat
  */
-export async function processImageAttachments(files: File[]): Promise<{ name: string; url: string; contentType: string }[]> {
+export async function processImageAttachments(files: File[]): Promise<Attachment[]> {
   return Promise.all(
     files.map(async (file) => {
-      return new Promise<{ name: string; url: string; contentType: string }>((resolve) => {
+      return new Promise<Attachment>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
           resolve({
