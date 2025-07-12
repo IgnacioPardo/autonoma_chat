@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Prevent horizontal overflow globally */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Custom animations for loading indicator */
 @keyframes typing-pulse {
   0%, 60%, 100% {
