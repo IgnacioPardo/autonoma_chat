@@ -3,6 +3,8 @@ import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
 import toast from 'react-hot-toast';
+import VoiceInput from './voice-input';
+import { useSpeech } from '../hooks/use-speech';
 
 interface ChatInputProps {
   input: string;
@@ -34,6 +36,26 @@ export default function ChatInput({
   messages
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice functionality
+  const {
+    isListening,
+    startListening,
+    stopListening,
+    transcript,
+    isSupported,
+  } = useSpeech();
+
+  const handleVoiceTranscript = (text: string) => {
+    setInput(text);
+    // Auto-submit if there's transcribed text
+    if (text.trim()) {
+      const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent<HTMLFormElement>;
+      setTimeout(() => {
+        void handleSubmit(formEvent);
+      }, 100);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -233,18 +255,29 @@ export default function ChatInput({
               />
               
               {/* File upload button inside input on the right */}
-              <button
-                type="button"
-                onClick={handleImageButtonClick}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors z-20 cursor-pointer"
-                title="Agregar archivos (imágenes, CSV, Markdown)"
-              >
-                <ImagePlus size={18} />
-              </button>
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1 z-20">
+                <VoiceInput
+                  isListening={isListening}
+                  isSupported={isSupported}
+                  transcript={transcript}
+                  onStartListening={startListening}
+                  onStopListening={stopListening}
+                  onTranscriptSubmit={handleVoiceTranscript}
+                />
+                
+                <button
+                  type="button"
+                  onClick={handleImageButtonClick}
+                  className="p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                  title="Agregar archivos (imágenes, CSV, Markdown)"
+                >
+                  <ImagePlus size={18} />
+                </button>
+              </div>
               
               <input
                 className={`
-                  h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-16 py-4 
+                  h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-24 py-4 
                   shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
                   focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
                   text-base

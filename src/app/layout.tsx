@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { Providers } from "~/components/providers";
@@ -9,12 +9,13 @@ export const metadata: Metadata = {
   title: "Autonoma Chat",
   description: "Autonoma LLM Chat Interface - Take Home",
   icons: [{ rel: "icon", url: "/favicon.png" }],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 const geist = Geist({

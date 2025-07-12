@@ -1,5 +1,7 @@
 import React from 'react';
 import { Edit3, Copy, Share } from 'lucide-react';
+import VoicePlayback from './voice-playback';
+import { useSpeech } from '../hooks/use-speech';
 
 interface MessageActionsProps {
   messageText: string;
@@ -16,6 +18,13 @@ export default function MessageActions({
   onShare,
   onEdit
 }: MessageActionsProps) {
+  const {
+    isPlaying,
+    isTTSLoading,
+    playText,
+    stopSpeaking,
+  } = useSpeech();
+
   return (
     <div
       className={`absolute ${isUserMessage ? "right-0" : "left-0"} -bottom-10 flex flex-row gap-1 z-20 opacity-100`}
@@ -29,6 +38,17 @@ export default function MessageActions({
         >
           <Edit3 className="h-4 w-4 text-gray-600" />
         </button>
+      )}
+      
+      {/* Voice playback - only for assistant messages */}
+      {!isUserMessage && (
+        <VoicePlayback
+          messageText={messageText}
+          isPlaying={isPlaying}
+          isLoading={isTTSLoading}
+          onPlay={playText}
+          onStop={stopSpeaking}
+        />
       )}
       
       <button
