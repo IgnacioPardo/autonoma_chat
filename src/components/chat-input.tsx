@@ -1,7 +1,8 @@
-import { Send, Pencil } from 'lucide-react';
-import ImageUpload from './image-upload';
+import { Send, Pencil, ImagePlus, X } from 'lucide-react';
+import Image from 'next/image';
 import type { Message } from 'ai';
 import type { Attachment } from '~/types/chat';
+import { useRef } from 'react';
 
 interface ChatInputProps {
   input: string;
@@ -32,6 +33,24 @@ export default function ChatInput({
   append,
   messages
 }: ChatInputProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file?.type.startsWith('image/')) {
+      handleImageUpload(file);
+      console.log('Image added:', file.name, file.type);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <>
       {/* Background Blur behind input - solo visible cuando hay mensajes */}
@@ -47,6 +66,42 @@ export default function ChatInput({
           ? "bottom-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
           : "bottom-0 left-1/2 transform -translate-x-1/2"
       }`}>
+        
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        
+        {/* Image previews */}
+        {uploadedImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {uploadedImages.map((image, index) => (
+              <div key={index} className="relative group">
+                <Image
+                  src={URL.createObjectURL(image)}
+                  alt={`Preview ${index + 1}`}
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                  unoptimized // Necesario para URLs de blob
+                />
+                <button
+                  onClick={() => handleImageRemove(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Eliminar imagen"
+                  type="button"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <form
           onSubmit={
             // If there are no messages, wait 200ms before submitting to allow transition to bottom
@@ -63,9 +118,6 @@ export default function ChatInput({
           }
           className="mb-4 flex w-full flex-col gap-3"
         >
-          {/* Image Upload Component */}
-          <ImageUpload onImageAdd={handleImageUpload} images={uploadedImages} onImageRemove={handleImageRemove} />
-          
           {/* Input Row */}
           <div className="flex w-full flex-row items-center gap-3">
             <div className="relative flex-1">
@@ -73,9 +125,20 @@ export default function ChatInput({
                 size={18} 
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-violet z-20 transition-colors duration-300" 
               />
+              
+              {/* Image upload button inside input on the right */}
+              <button
+                type="button"
+                onClick={handleImageButtonClick}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors z-20"
+                title="Agregar imagen"
+              >
+                <ImagePlus size={18} />
+              </button>
+              
               <input
                 className={`
-                  h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-4 py-4 
+                  h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-16 py-4 
                   shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
                   focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
                   text-sm sm:text-base

@@ -69,7 +69,7 @@ export default function ImageUpload({ onImageAdd, images, onImageRemove }: Image
       <button
         type="button"
         onClick={handleButtonClick}
-        className="mb-2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 bg-white/90"
+        className="mb-2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 bg-white/90 cursor-pointer"
         title="Agregar imagen"
       >
         <ImagePlus size={18} />

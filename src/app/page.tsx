@@ -8,7 +8,6 @@ import ChatInput from "~/components/chat-input";
 import { useState, useEffect, useRef } from 'react';
 import type { Message } from 'ai';
 import type { ChatHistory } from '~/lib/chat-history';
-import type { Attachment } from '~/types/chat';
 import { saveChatAfterMessage, processImageAttachments } from '~/lib/chat-utils';
 import { saveEditedMessage } from '~/lib/message-edit';
 import { copyToClipboard, shareText } from '~/lib/clipboard-utils';
