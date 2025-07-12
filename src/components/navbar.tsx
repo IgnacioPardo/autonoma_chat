@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { MessageSquare, LogOut, User } from 'lucide-react';
+import { MessageSquare, LogOut, User, Settings } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useState } from 'react';
+import VoiceSettings from './voice-settings';
 
 interface NavBarProps {
   onOpenSidebar: () => void;
@@ -13,6 +14,7 @@ interface NavBarProps {
 export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
   const { data: session } = useSession();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const isDevelopment = process.env.NODE_ENV === "development";
 
   const handleSignOut = async () => {
@@ -47,6 +49,16 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
             <span>Guardando</span>
           </div>
         )}
+        
+        {/* Voice settings button */}
+        <button
+          onClick={() => setShowVoiceSettings(true)}
+          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+          title="Configuración de voz"
+        >
+          <Settings size={20} className="text-primary-violet" />
+          <span className="hidden sm:inline text-sm text-gray-600">Voz</span>
+        </button>
         
         {/* User menu - show login button in development */}
         {isDevelopment && !session ? (
@@ -102,6 +114,12 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
           </div>
         )}
       </div>
+      
+      {/* Voice Settings Modal */}
+      <VoiceSettings 
+        isOpen={showVoiceSettings}
+        onClose={() => setShowVoiceSettings(false)}
+      />
     </nav>
   );
 }

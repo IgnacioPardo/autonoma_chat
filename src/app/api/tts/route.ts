@@ -8,8 +8,8 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { text?: string };
-    const { text } = body;
+    const body = await request.json() as { text?: string; voice?: string };
+    const { text, voice = 'alloy' } = body;
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -18,13 +18,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate voice option
+    const validVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'];
+    const selectedVoice = validVoices.includes(voice) ? voice : 'alloy';
+
     // Limit text length to prevent excessive costs
     const maxLength = 4000; // About 4000 characters
     const truncatedText = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 
     const mp3 = await openai.audio.speech.create({
       model: "tts-1",
-      voice: "alloy",
+      voice: selectedVoice as "alloy" | "ash" | "ballad" | "coral" | "echo" | "fable" | "nova" | "onyx" | "sage" | "shimmer",
       input: truncatedText,
       response_format: "mp3",
     });

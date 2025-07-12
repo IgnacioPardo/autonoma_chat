@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { getCurrentVoice } from '../components/voice-settings';
 
 interface UseSpeechReturn {
   // Speech-to-Text
@@ -113,12 +114,14 @@ export function useSpeech(): UseSpeechReturn {
     try {
       setIsTTSLoading(true);
       
+      const selectedVoice = getCurrentVoice();
+      
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voice: selectedVoice }),
       });
 
       if (!response.ok) {
