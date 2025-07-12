@@ -56,17 +56,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              {session?.user?.image ? (
-                <Image
-                  src={session.user.image}
-                  alt={session.user.name ?? "Usuario"}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-              ) : (
-                <User size={20} className="text-gray-600" />
-              )}
+              <User size={20} className="text-primary-violet" />
               {!isDevelopment && (
                 <span className="hidden sm:inline text-sm text-gray-600">
                   {session?.user?.name ?? "Usuario"}

@@ -14,7 +14,7 @@ export default function LoadingIndicator({ isLoading }: LoadingIndicatorProps) {
             <div className="w-2 h-2 bg-gray-300 rounded-full animate-typing-pulse-delay-1"></div>
             <div className="w-2 h-2 bg-gray-400 rounded-full animate-typing-pulse-delay-2"></div>
           </div>
-          <span className="text-sm text-gray-600">Autonoma está escribiendo...</span>
+          <span className="text-sm text-gray-600">Autonoma Chat está cargando...</span>
         </div>
       </div>
     </div>
