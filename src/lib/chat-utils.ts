@@ -59,7 +59,7 @@ export async function saveChatAfterMessage(
         }
       } catch (updateError) {
         // If update fails, create a new chat instead
-        // console.log('Chat update failed, creating new chat instead. Error:', updateError);
+        console.log('Chat update failed, creating new chat instead. Error:', updateError);
         const savedChat = await saveChatHistory(messagesToSave);
         // console.log('Created new chat after update failure:', savedChat.id);
         setCurrentChatId(savedChat.id);
@@ -81,15 +81,16 @@ export async function saveChatAfterMessage(
 /**
  * Converts uploaded files to base64 attachments for multimodal chat
  */
-export async function processImageAttachments(files: File[]): Promise<{ name: string; url: string }[]> {
+export async function processImageAttachments(files: File[]): Promise<{ name: string; url: string; contentType: string }[]> {
   return Promise.all(
     files.map(async (file) => {
-      return new Promise<{ name: string; url: string }>((resolve) => {
+      return new Promise<{ name: string; url: string; contentType: string }>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
           resolve({
             name: file.name,
             url: reader.result as string,
+            contentType: file.type, // Add the content type
           });
         };
         reader.readAsDataURL(file);

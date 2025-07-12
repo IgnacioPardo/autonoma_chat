@@ -1,5 +1,4 @@
 import type { Message } from 'ai';
-import { saveChatHistory, updateChatHistory } from './chat-history';
 
 export interface MessageEditOptions {
   currentChatId: string | null;
@@ -24,14 +23,13 @@ export async function saveEditedMessage(
   options: MessageEditOptions
 ): Promise<void> {
   const { 
-    currentChatId, 
-    setCurrentChatId, 
     setMessages, 
     setEditingMessageId, 
     setEditText, 
     reload,
     setSidebarRefreshTrigger,
-    setIsSaving
+    setIsSaving,
+    setCurrentChatId
   } = options;
 
   if (!editText.trim()) {
@@ -87,15 +85,15 @@ export async function saveEditedMessage(
     //   console.log('Make sure currentChatIdRef.current is updated before onFinish triggers');
       
       // Use a longer timeout to ensure the currentChatId state has updated in the useChat hook
-      setTimeout(async () => {
+      setTimeout(() => {
         // console.log('Calling reload() NOW - checking final state:');
         // console.log('- Expected target chat ID:', savedChat.id);
         // console.log('- State should be propagated by now');
-        reload();
+        void reload();
       }, 500); // Increased timeout even more
     }
 
-  } catch (error) {
+  } catch {
     // console.error('Error saving edited message:', error);
     // Don't create a fallback chat on error - just show the error
     // The user can try editing again

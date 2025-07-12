@@ -21,13 +21,27 @@ model Chat {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  role      String   // "user" or "assistant"
-  content   String
-  position  Int      // Order/index in the conversation
-  createdAt DateTime @default(now())
-  chatId    String
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  role        String       // "user" or "assistant"
+  content     String
+  position    Int          // Order/index in the conversation
+  createdAt   DateTime     @default(now())
+  chatId      String
+  chat        Chat         @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  attachments Attachment[] // New relation to attachments
   
   @@map("messages")
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  name        String   // Original filename
+  contentType String   // MIME type (e.g., "image/png")
+  url         String   // Base64 data URL or file path
+  size        Int?     // File size in bytes
+  createdAt   DateTime @default(now())
+  messageId   String
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@map("attachments")
 }

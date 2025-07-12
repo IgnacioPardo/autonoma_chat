@@ -29,7 +29,7 @@ export default function ChatSidebar({
 
   useEffect(() => {
     if (isOpen) {
-      loadChatHistory();
+      void loadChatHistory();
     }
   }, [isOpen, refreshTrigger]);
 
@@ -188,7 +188,7 @@ export default function ChatSidebar({
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-800 text-sm truncate">
-                      {chat.title || 'Chat sin título'}
+                      {chat.title ?? 'Chat sin título'}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {formatDate(chat.updatedAt)} • {chat.messages.length} mensajes

@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '~/lib/prisma'
+import type { MessageWithAttachments } from '~/types/messages'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
@@ -11,6 +13,9 @@ export async function GET(
       where: { id },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
             createdAt: 'asc'
           }
@@ -37,11 +42,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const { messages } = await request.json()
+    const body = await request.json() as { messages: MessageWithAttachments[] }
+    const { messages } = body
 
     // console.log('PUT endpoint - Chat ID:', id);
     // console.log('PUT endpoint - Received messages:', messages);
@@ -55,50 +61,50 @@ export async function PUT(
     // })));
 
     // Filter out empty or invalid messages
-    const validMessages = messages.filter((message: any) => 
-      message && 
-      message.content && 
-      typeof message.content === 'string' && 
+    const validMessages = messages.filter((message: MessageWithAttachments): message is MessageWithAttachments => 
+      Boolean(message) &&
+      Boolean(message.content) &&
+      typeof message.content === 'string' &&
       message.content.trim().length > 0 &&
-      message.role &&
+      Boolean(message.role) &&
       (message.role === 'user' || message.role === 'assistant')
     );
 
-    // console.log('PUT endpoint - Valid messages count:', validMessages.length);
-    // console.log('PUT endpoint - Valid messages details:', validMessages.map((m: any, i: number) => ({ 
-    //   index: i,
-    //   role: m.role, 
-    //   content: m.content.substring(0, 50) + (m.content.length > 50 ? '...' : ''),
-    //   originalLength: m.content.length
-    // })));
-
     if (validMessages.length === 0) {
-      // console.log('PUT endpoint - No valid messages to save!');
       return NextResponse.json(
         { error: 'No valid messages provided' },
         { status: 400 }
       );
     }
 
-    // Delete existing messages and add new ones
+    // Delete existing messages and their attachments (cascade will handle attachments)
     await prisma.message.deleteMany({
       where: { chatId: id }
     })
 
-    // console.log('PUT endpoint - Deleted existing messages for chat:', id);
+    console.log('PUT endpoint - Deleted existing messages for chat:', id);
 
-    const messagesToCreate = validMessages.map((message: { role: string; content: string; position?: number }, index: number) => ({
+    const messagesToCreate = validMessages.map((message: MessageWithAttachments, index: number) => ({
       role: message.role,
       content: message.content.trim(),
-      position: message.position ?? index
+      position: message.position ?? index,
+      attachments: message.attachments ? {
+        create: message.attachments.map(att => ({
+          name: att.name,
+          contentType: att.contentType,
+          url: att.url,
+          size: att.size
+        }))
+      } : undefined
     }));
 
-    // console.log('PUT endpoint - Messages to create in DB:', messagesToCreate.map((m, i) => ({
-    //   dbIndex: i,
-    //   role: m.role,
-    //   content: m.content.substring(0, 30) + '...',
-    //   position: m.position
-    // })));
+    console.log('PUT endpoint - Messages to create in DB:', messagesToCreate.map((m, i: number) => ({
+      dbIndex: i,
+      role: m.role,
+      content: m.content.substring(0, 30) + '...',
+      position: m.position,
+      hasAttachments: Boolean(m.attachments)
+    })));
 
     const chat = await prisma.chat.update({
       where: { id },
@@ -110,18 +116,17 @@ export async function PUT(
       },
       include: {
         messages: {
+          include: {
+            attachments: true
+          },
           orderBy: {
-            position: 'asc'
+            createdAt: 'asc' // Use createdAt instead of position for now
           }
         }
       }
     })
 
-    // console.log('PUT endpoint - Updated chat with new messages:', {
-    //   chatId: chat.id,
-    //   messageCount: chat.messages.length,
-    //   messages: chat.messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...' }))
-    // });
+    console.log('PUT endpoint - Updated chat successfully with messages');
 
     return NextResponse.json(chat)
   } catch (error) {
@@ -135,11 +140,12 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const { title } = await request.json()
+    const body = await request.json() as { title: string }
+    const { title } = body
 
     const chat = await prisma.chat.update({
       where: { id },
@@ -168,7 +174,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params

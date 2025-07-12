@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
+import type { Message } from 'ai'
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json()
+    const body = await request.json() as { messages: Message[] }
+    const { messages } = body
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
@@ -14,9 +17,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Take the first few messages to generate a title
-    const firstMessages = messages.slice(0, 4).map((msg: any) => ({
+    const firstMessages = messages.slice(0, 4).map((msg: Message) => ({
       role: msg.role,
-      content: msg.content.slice(0, 200) // Limit content length
+      content: typeof msg.content === 'string' ? msg.content.slice(0, 200) : '' // Limit content length
     }))
 
     const { text } = await generateText({
