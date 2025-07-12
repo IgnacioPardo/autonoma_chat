@@ -1,8 +1,9 @@
 // https://vercel.com/guides/streaming-from-llm
 
 import { openai } from "@ai-sdk/openai";
-import { streamText, convertToCoreMessages } from "ai";
+import { streamText, convertToCoreMessages, tool } from "ai";
 import type { Message } from "ai";
+import { z } from 'zod';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -68,6 +69,49 @@ export async function POST(req: Request) {
     const result = streamText({
       model: openai("gpt-4o"), // gpt-4o supports vision
       messages: convertToCoreMessages(messages),
+      tools: {
+        generateImage: tool({
+          description: 'Generate an image based on a text description using DALL-E 3',
+          parameters: z.object({
+            prompt: z.string().describe('A detailed description of the image to generate'),
+            size: z.enum(['1024x1024', '1024x1792', '1792x1024']).default('1024x1024').describe('The size of the image'),
+            quality: z.enum(['standard', 'hd']).default('standard').describe('The quality of the image')
+          }),
+          execute: async ({ prompt, size, quality }) => {
+            try {
+              // Call our image generation API
+              const response = await fetch(`${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/generate-image`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt, size, quality }),
+              });
+
+              if (!response.ok) {
+                throw new Error(`Image generation failed: ${response.statusText}`);
+              }
+
+              const data = await response.json() as { imageUrl: string };
+              
+              return {
+                success: true,
+                imageUrl: data.imageUrl,
+                prompt: prompt,
+                size: size,
+                quality: quality
+              };
+            } catch (error) {
+              console.error('Error generating image:', error);
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                prompt: prompt
+              };
+            }
+          }
+        })
+      }
     });
 
     return result.toDataStreamResponse();

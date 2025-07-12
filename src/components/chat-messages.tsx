@@ -6,6 +6,21 @@ import LoadingIndicator from './loading-indicator';
 import type { Message, Attachment as AIAttachment } from 'ai';
 import type { Attachment } from '~/types/chat';
 
+interface ImageGenerationResult {
+  success: boolean;
+  imageUrl?: string;
+  prompt?: string;
+  size?: string;
+  quality?: string;
+  error?: string;
+}
+
+interface ImageGenerationArgs {
+  prompt?: string;
+  size?: string;
+  quality?: string;
+}
+
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
@@ -155,10 +170,16 @@ export default function ChatMessages({
             <div className={`flex flex-col gap-2 max-w-xs lg:max-w-md w-full ${message.role === "user" ? "items-end" : "items-start"}`}>
               {/* Text message bubble */}
               <div
-                className={`group relative rounded-2xl px-4 py-3 break-words max-w-full mb-12 ${
-                  message.role === "user"
-                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white"
-                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm"
+                className={`group relative rounded-2xl break-words max-w-full mb-12 overflow-visible ${
+                  // Special styling for messages with tool invocations (like image generation)
+                  message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
+                    ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
+                    // Special styling for user messages with only attachments (no text)
+                    : !messageText.trim() && hasAttachments && message.role === "user"
+                    ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
+                    : message.role === "user"
+                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3"
+                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3"
                 }`}
               >
                 {editingMessageId === message.id ? (
@@ -202,17 +223,94 @@ export default function ChatMessages({
                 ) : (
                   // Normal message display
                   <>
-                    <div
-                      className={`prose prose-sm sm:prose-base max-w-none overflow-hidden break-words ${
-                        message.role === "user" 
-                          ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
-                          : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
-                      }`}
-                    >
-                      <Markdown>
-                        {messageText}
-                      </Markdown>
-                    </div>
+                    {/* Only show text container if there's actual text content */}
+                    {messageText.trim() && (
+                      <div
+                        className={`prose prose-sm sm:prose-base max-w-none overflow-hidden break-words ${
+                          // Special styling for text content when there are tool invocations
+                          message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
+                            ? "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3 mb-4 [&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
+                            // Special styling for user text when there are attachments (create separate bubble)
+                            : hasAttachments && message.role === "user"
+                            ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3 mb-4 prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100"
+                            : message.role === "user" 
+                            ? "prose-invert [&_code]:bg-white/20 [&_pre]:bg-white/10 [&_code]:text-gray-100" 
+                            : "[&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
+                        }`}
+                      >
+                        <Markdown>
+                          {messageText}
+                        </Markdown>
+                      </div>
+                    )}
+
+                    {/* Tool invocations - show generated images and other tool results */}
+                    {message.toolInvocations && message.toolInvocations.length > 0 && (
+                      <div className="mt-4 space-y-3 relative z-10">
+                        {message.toolInvocations.map((toolInvocation, index) => {
+                          if (toolInvocation.toolName === 'generateImage' && toolInvocation.state === 'result') {
+                            const result = toolInvocation.result as ImageGenerationResult;
+                            
+                            if (result.success && result.imageUrl) {
+                              return (
+                                <div key={index} className="rounded-xl overflow-visible border-2 border-gray-200 shadow-lg bg-white relative z-10">
+                                  <div className="relative z-10">
+                                    <Image
+                                      src={result.imageUrl}
+                                      alt={result.prompt ?? 'Generated image'}
+                                      width={1024}
+                                      height={1024}
+                                      className="w-full h-auto object-cover rounded-t-lg"
+                                      unoptimized // Since it's a base64 data URL
+                                    />
+                                  </div>
+                                  <div className="p-3 border-t relative z-10">
+                                    <div className="text-xs text-gray-600 mb-1 break-words">
+                                      <span className="font-medium">Prompt:</span> {result.prompt}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {result.size} • {result.quality} quality
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div key={index} className="rounded-xl border-2 border-red-200 bg-red-50 p-3 relative z-10">
+                                  <div className="text-sm text-red-700">
+                                    <span className="font-medium">Error generando imagen:</span> {result.error}
+                                  </div>
+                                  {result.prompt && (
+                                    <div className="text-xs text-red-600 mt-1 break-words">
+                                      Prompt: {result.prompt}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                          } else if (toolInvocation.toolName === 'generateImage' && toolInvocation.state === 'call') {
+                            // Show loading state for image generation
+                            const args = toolInvocation.args as ImageGenerationArgs;
+                            return (
+                              <div key={index} className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 relative z-10">
+                                <div className="flex items-center gap-3">
+                                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                                  <div className="text-sm text-blue-700">
+                                    Generando imagen...
+                                  </div>
+                                </div>
+                                <div className="text-xs text-blue-600 mt-2 break-words">
+                                  {args?.prompt && `Prompt: ${args.prompt}`}
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          // Handle other tool types here in the future
+                          return null;
+                        })}
+                      </div>
+                    )}
 
                     {/* Botones de acción que aparecen al hacer hover */}
                     <MessageActions

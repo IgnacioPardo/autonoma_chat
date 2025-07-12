@@ -141,12 +141,12 @@ export default function ChatInput({
       {/* Background Blur behind input - solo visible cuando hay mensajes */}
       {messages.length > 0 && (
         <div 
-          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient z-10"
+          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient z-40"
         ></div>
       )}
       
       {/* Input Form - posición dinámica basada en si hay mensajes */}
-      <div className={`z-10 fixed w-5/6 sm:w-4/5 md:w-2/3 p-4 transition-all duration-1000 ease-in-out ${
+      <div className={`z-50 fixed w-5/6 sm:w-4/5 md:w-2/3 p-4 transition-all duration-1000 ease-in-out ${
         messages.length === 0 
           ? "bottom-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
           : "bottom-0 left-1/2 transform -translate-x-1/2"
