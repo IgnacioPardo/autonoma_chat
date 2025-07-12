@@ -83,7 +83,7 @@ export default function ChatMessages({
     }
   };
   return (
-    <div className="flex w-full flex-col space-y-12 sm:space-y-8 pt-28 pb-40 overflow-x-hidden max-w-full">
+    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 overflow-x-hidden max-w-full">
       {messages.map((message) => {
         const messageText = message.content;
         // Check if message has attachments (images)
@@ -113,7 +113,7 @@ export default function ChatMessages({
             <div className={`flex flex-col gap-2 max-w-xs lg:max-w-md w-full ${message.role === "user" ? "items-end" : "items-start"}`}>
               {/* Text message bubble */}
               <div
-                className={`group relative rounded-2xl px-4 py-3 overflow-hidden break-words max-w-full ${
+                className={`group relative rounded-2xl px-4 py-3 break-words max-w-full mb-12 ${
                   message.role === "user"
                     ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white"
                     : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm"
@@ -143,14 +143,14 @@ export default function ChatMessages({
                       <button
                         onClick={() => saveEdit(message.id)}
                         disabled={!editText.trim()}
-                        className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         title="Guardar cambios"
                       >
                         <Check size={16} />
                       </button>
                       <button
                         onClick={cancelEdit}
-                        className="p-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                        className="p-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors cursor-pointer"
                         title="Cancelar edición"
                       >
                         <X size={16} />

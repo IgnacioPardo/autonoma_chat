@@ -2,6 +2,7 @@ import { Send, Pencil, ImagePlus, X, FileText, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
+import toast from 'react-hot-toast';
 
 interface ChatInputProps {
   input: string;
@@ -37,8 +38,30 @@ export default function ChatInput({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total
+      
+      // Calculate current total size
+      const currentSize = uploadedImages.reduce((total, file) => total + file.size, 0);
+      
       // Process each selected file
       Array.from(files).forEach(file => {
+        // Check individual file size
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`El archivo "${file.name}" es demasiado grande (${(file.size / 1024 / 1024).toFixed(2)}MB). El tamaño máximo es 5MB.`, {
+            duration: 6000
+          });
+          return;
+        }
+        
+        // Check total size limit
+        if (currentSize + file.size > MAX_TOTAL_SIZE) {
+          toast.error(`Agregando "${file.name}" excedería el límite total de 10MB. Tamaño actual: ${(currentSize / 1024 / 1024).toFixed(2)}MB`, {
+            duration: 6000
+          });
+          return;
+        }
+        
         // Accept images, CSV, and Markdown files
         const isValidFile = file.type.startsWith('image/') || 
                            file.type === 'text/csv' || 
@@ -49,11 +72,15 @@ export default function ChatInput({
         if (isValidFile) {
           handleImageUpload(file);
           console.log('File added:', file.name, file.type);
+          toast.success(`Archivo agregado: ${file.name}`, { duration: 3000 });
         } else {
-          alert(`Archivo no permitido: ${file.name}. Solo se permiten archivos de imagen, CSV y Markdown.`);
+          toast.error(`Tipo de archivo no soportado: ${file.name}. Solo se permiten imágenes, archivos CSV y Markdown.`, {
+            duration: 5000
+          });
         }
       });
     }
+    
     // Reset input so same files can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -109,48 +136,75 @@ export default function ChatInput({
           multiple
         />
         
-        {/* File previews */}
+        {/* File previews with size indicator */}
         {uploadedImages.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImages.map((file, index) => (
-              <div key={index} className="relative group">
-                {file.type.startsWith('image/') ? (
-                  // Image preview
-                  <Image
-                    src={URL.createObjectURL(file)}
-                    alt={`Preview ${index + 1}`}
-                    width={80}
-                    height={80}
-                    className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                    unoptimized // Necesario para URLs de blob
-                  />
-                ) : (
-                  // File icon preview
-                  <div className="w-20 h-20 flex flex-col items-center justify-center rounded-lg border border-gray-300 bg-gray-50 p-2">
-                    {getFileIcon(file)}
-                    <span className="text-xs text-gray-600 mt-1 truncate w-full text-center">
-                      {file.name.split('.').pop()?.toUpperCase()}
-                    </span>
+          <div className="mb-3">
+            {/* Size indicator */}
+            <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
+              <span>{uploadedImages.length} archivo{uploadedImages.length > 1 ? 's' : ''}</span>
+              <span>
+                {formatFileSize(uploadedImages.reduce((total, file) => total + file.size, 0))} / 10MB
+              </span>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-1 mb-3">
+              <div 
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  uploadedImages.reduce((total, file) => total + file.size, 0) > 8 * 1024 * 1024
+                    ? 'bg-red-500' 
+                    : uploadedImages.reduce((total, file) => total + file.size, 0) > 6 * 1024 * 1024
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500'
+                }`}
+                style={{ 
+                  width: `${Math.min(100, (uploadedImages.reduce((total, file) => total + file.size, 0) / (10 * 1024 * 1024)) * 100)}%` 
+                }}
+              ></div>
+            </div>
+
+            {/* File previews */}
+            <div className="flex flex-wrap gap-2">
+              {uploadedImages.map((file, index) => (
+                <div key={index} className="relative group">
+                  {file.type.startsWith('image/') ? (
+                    // Image preview
+                    <Image
+                      src={URL.createObjectURL(file)}
+                      alt={`Preview ${index + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                      unoptimized // Necesario para URLs de blob
+                    />
+                  ) : (
+                    // File icon preview
+                    <div className="w-20 h-20 flex flex-col items-center justify-center rounded-lg border border-gray-300 bg-gray-50 p-2">
+                      {getFileIcon(file)}
+                      <span className="text-xs text-gray-600 mt-1 truncate w-full text-center">
+                        {file.name.split('.').pop()?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* File info tooltip */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="truncate">{file.name}</div>
+                    <div>{formatFileSize(file.size)}</div>
                   </div>
-                )}
-                
-                {/* File info tooltip */}
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="truncate">{file.name}</div>
-                  <div>{formatFileSize(file.size)}</div>
+                  
+                  {/* Remove button */}
+                  <button
+                    onClick={() => handleImageRemove(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    title="Eliminar archivo"
+                    type="button"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
-                
-                {/* Remove button */}
-                <button
-                  onClick={() => handleImageRemove(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Eliminar archivo"
-                  type="button"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -182,7 +236,7 @@ export default function ChatInput({
               <button
                 type="button"
                 onClick={handleImageButtonClick}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors z-20"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors z-20 cursor-pointer"
                 title="Agregar archivos (imágenes, CSV, Markdown)"
               >
                 <ImagePlus size={18} />
@@ -250,7 +304,7 @@ export default function ChatInput({
             <button
               type="submit"
               disabled={!input.trim() && uploadedImages.length === 0}
-              className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Send size={20} />
               <span className="hidden sm:inline">Enviar</span>

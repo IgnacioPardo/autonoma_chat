@@ -149,7 +149,7 @@ export default function ChatSidebar({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} className="text-gray-500" />
           </button>
@@ -162,7 +162,7 @@ export default function ChatSidebar({
               onNewChat();
               onClose();
             }}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-blue to-primary-violet text-white hover:shadow-lg transition-all duration-200"
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-blue to-primary-violet text-white hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
             <Plus size={20} />
             <span className="font-medium">Nuevo Chat</span>
@@ -209,7 +209,7 @@ export default function ChatSidebar({
                       <button
                         onClick={(e) => handleRegenerateTitle(chat, e)}
                         disabled={regeneratingTitle === chat.id}
-                        className="p-1 hover:bg-blue-100 rounded-lg transition-all duration-200"
+                        className="p-1 hover:bg-blue-100 rounded-lg transition-all duration-200 cursor-pointer"
                         title="Regenerar título"
                       >
                         <RefreshCw 
@@ -220,7 +220,7 @@ export default function ChatSidebar({
                     )}
                     <button
                       onClick={(e) => handleDeleteChat(chat.id, e)}
-                      className="p-1 hover:bg-red-100 rounded-lg transition-all duration-200"
+                      className="p-1 hover:bg-red-100 rounded-lg transition-all duration-200 cursor-pointer"
                       title="Eliminar chat"
                     >
                       <Trash2 size={14} className="text-red-500" />

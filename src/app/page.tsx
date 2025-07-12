@@ -45,7 +45,16 @@ export default function HomePage() {
       console.log('🔄 Marked conversation for saving when loading finishes');
     },
     onError: (error) => {
-      toastUtils.apiError(error, 'Error al enviar el mensaje');
+      console.error('Chat error:', error);
+      
+      // Handle specific error types
+      if (error.message.includes('413') || error.message.toLowerCase().includes('payload too large')) {
+        toastUtils.error('Los archivos adjuntos son demasiado grandes. Intenta reducir el tamaño o número de archivos.');
+      } else if (error.message.includes('Attachments too large')) {
+        toastUtils.error('Los archivos adjuntos exceden el límite de 20MB. Por favor, reduce el tamaño de los archivos.');
+      } else {
+        toastUtils.apiError(error, 'Error al enviar el mensaje');
+      }
     }
   });  
   useEffect(() => {

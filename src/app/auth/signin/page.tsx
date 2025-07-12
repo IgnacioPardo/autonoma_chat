@@ -92,7 +92,7 @@ function SignInContent() {
               <button
                 key={provider.name}
                 onClick={() => signIn(provider.id, { callbackUrl: "/" })}
-                className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors duration-200 border border-gray-600"
+                className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors duration-200 border border-gray-600 cursor-pointer"
               >
                 {provider.name === "GitHub" && <Github className="w-5 h-5" />}
                 Continuar con {provider.name}

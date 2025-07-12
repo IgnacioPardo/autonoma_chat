@@ -25,7 +25,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
       <div className="flex items-center w-1/3">
         <button
           onClick={onOpenSidebar}
-          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           title="Historial de chats"
         >
           <MessageSquare size={20} className="text-primary-violet" />
@@ -52,7 +52,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
         {isDevelopment && !session ? (
           <button
             onClick={() => window.location.href = '/auth/signin'}
-            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors text-sm text-gray-600"
+            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors text-sm text-gray-600 cursor-pointer"
           >
             <User size={20} />
             Probar Login
@@ -61,7 +61,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
             >
               <User size={20} className="text-primary-violet" />
               {!isDevelopment && (
@@ -85,7 +85,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
                     >
                       <LogOut size={16} />
                       Cerrar sesión
