@@ -21,7 +21,6 @@ export function useSpeech(): UseSpeechReturn {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -31,18 +30,6 @@ export function useSpeech(): UseSpeechReturn {
     const supported = typeof window !== 'undefined' && 
       ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
     setIsSupported(supported);
-
-    // Check microphone permissions if supported
-    if (supported && navigator.permissions) {
-      navigator.permissions.query({ name: 'microphone' as PermissionName })
-        .then(permission => {
-          setHasPermission(permission.state === 'granted');
-        })
-        .catch(() => {
-          // Permission API not supported, assume we need to request permission
-          setHasPermission(null);
-        });
-    }
   }, []);
 
   const startListening = useCallback(() => {
@@ -89,7 +76,6 @@ export function useSpeech(): UseSpeechReturn {
             break;
           case 'not-allowed':
             console.warn('Speech recognition: Microphone access denied');
-            setHasPermission(false);
             break;
           case 'no-speech':
             // User didn't speak, this is normal

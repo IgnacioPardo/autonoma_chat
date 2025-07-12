@@ -99,13 +99,15 @@ export async function processFileAttachments(files: File[]): Promise<Attachment[
       }
 
       // Determine file type
-      let fileType: 'image' | 'csv' | 'markdown' | 'other' = 'other';
+      let fileType: 'image' | 'csv' | 'markdown' | 'pdf' | 'other' = 'other';
       if (file.type.startsWith('image/')) {
         fileType = 'image';
       } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
         fileType = 'csv';
       } else if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
         fileType = 'markdown';
+      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        fileType = 'pdf';
       }
 
       let processedFile: Attachment;
@@ -113,8 +115,11 @@ export async function processFileAttachments(files: File[]): Promise<Attachment[
       if (fileType === 'image') {
         // Compress and resize images
         processedFile = await compressImage(file, IMAGE_QUALITY, MAX_IMAGE_DIMENSION);
+      } else if (fileType === 'pdf') {
+        // Process PDF files
+        processedFile = await processPdfFile(file);
       } else {
-        // Process non-image files normally
+        // Process other non-image files normally
         processedFile = await processNonImageFile(file, fileType);
       }
 
@@ -182,6 +187,71 @@ async function compressImage(file: File, quality: number, maxDimension: number):
 
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
+ * Processes PDF files by extracting text content via API
+ */
+async function processPdfFile(file: File): Promise<Attachment> {
+  console.log('Sending PDF to extract endpoint:', file.name, file.type, file.size);
+
+  try {
+    // Send PDF to backend for text extraction
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/pdf/extract', {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log('PDF extract response status:', response.status, response.statusText);
+
+    if (response.ok) {
+      const result = await response.json() as { text: string; info: { pages: number } };
+      console.log('PDF extraction successful:', result.info);
+      
+      // Create a data URL with the extracted text
+      const textBlob = new Blob([result.text], { type: 'text/plain' });
+      const textDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(textBlob);
+      });
+
+      return {
+        name: file.name,
+        url: textDataUrl, // This contains the extracted text
+        contentType: 'application/pdf',
+        size: file.size,
+        fileType: 'pdf',
+      };
+    } else {
+      const errorText = await response.text();
+      console.warn('PDF extract API failed, using fallback:', response.status, response.statusText, errorText);
+      // Fall through to fallback processing
+    }
+  } catch (error) {
+    console.warn('PDF processing failed, using fallback:', error);
+    // Fall through to fallback processing
+  }
+
+  // Fallback: return PDF as binary data URL
+  console.log('Using fallback PDF processing for:', file.name);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        name: file.name,
+        url: reader.result as string,
+        contentType: file.type,
+        size: file.size,
+        fileType: 'pdf',
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 

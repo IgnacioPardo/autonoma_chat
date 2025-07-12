@@ -1,4 +1,4 @@
-import { Send, Pencil, ImagePlus, X, FileText, BarChart3 } from 'lucide-react';
+import { Send, Pencil, ImagePlus, X, FileText, BarChart3, File } from 'lucide-react';
 import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
@@ -84,19 +84,21 @@ export default function ChatInput({
           return;
         }
         
-        // Accept images, CSV, and Markdown files
+        // Accept images, CSV, Markdown, and PDF files
         const isValidFile = file.type.startsWith('image/') || 
                            file.type === 'text/csv' || 
                            file.name.endsWith('.csv') ||
                            file.type === 'text/markdown' || 
-                           file.name.endsWith('.md');
+                           file.name.endsWith('.md') ||
+                           file.type === 'application/pdf' ||
+                           file.name.endsWith('.pdf');
         
         if (isValidFile) {
           handleImageUpload(file);
           console.log('File added:', file.name, file.type);
           toast.success(`Archivo agregado: ${file.name}`, { duration: 3000 });
         } else {
-          toast.error(`Tipo de archivo no soportado: ${file.name}. Solo se permiten imágenes, archivos CSV y Markdown.`, {
+          toast.error(`Tipo de archivo no soportado: ${file.name}. Solo se permiten imágenes, archivos CSV, Markdown y PDF.`, {
             duration: 5000
           });
         }
@@ -120,6 +122,8 @@ export default function ChatInput({
       return <BarChart3 size={32} className="text-green-600" />;
     } else if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
       return <FileText size={32} className="text-blue-600" />;
+    } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+      return <File size={32} className="text-red-600" />;
     }
     return <FileText size={32} className="text-gray-600" />;
   };
@@ -152,41 +156,17 @@ export default function ChatInput({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,.csv,.md,.markdown,text/csv,text/markdown"
+          accept="image/*,.csv,.md,.markdown,.pdf,text/csv,text/markdown,application/pdf"
           onChange={handleFileSelect}
           className="hidden"
           multiple
         />
         
-        {/* File previews with size indicator */}
+        {/* File previews */}
         {uploadedImages.length > 0 && (
           <div className="mb-3">
-            {/* Size indicator */}
-            <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
-              <span>{uploadedImages.length} archivo{uploadedImages.length > 1 ? 's' : ''}</span>
-              <span>
-                {formatFileSize(uploadedImages.reduce((total, file) => total + file.size, 0))} / 10MB
-              </span>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-1 mb-3">
-              <div 
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  uploadedImages.reduce((total, file) => total + file.size, 0) > 8 * 1024 * 1024
-                    ? 'bg-red-500' 
-                    : uploadedImages.reduce((total, file) => total + file.size, 0) > 6 * 1024 * 1024
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }`}
-                style={{ 
-                  width: `${Math.min(100, (uploadedImages.reduce((total, file) => total + file.size, 0) / (10 * 1024 * 1024)) * 100)}%` 
-                }}
-              ></div>
-            </div>
-
             {/* File previews */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               {uploadedImages.map((file, index) => (
                 <div key={index} className="relative group">
                   {file.type.startsWith('image/') ? (
@@ -230,6 +210,35 @@ export default function ChatInput({
           </div>
         )}
 
+        {/* Size indicator and progress bar - only show when files are uploaded */}
+        {uploadedImages.length > 0 && (
+          <div className="mb-3">
+            {/* Size indicator */}
+            <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
+              <span>{uploadedImages.length} archivo{uploadedImages.length > 1 ? 's' : ''}</span>
+              <span>
+                {formatFileSize(uploadedImages.reduce((total, file) => total + file.size, 0))} / 10MB
+              </span>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-1">
+              <div 
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  uploadedImages.reduce((total, file) => total + file.size, 0) > 8 * 1024 * 1024
+                    ? 'bg-red-500' 
+                    : uploadedImages.reduce((total, file) => total + file.size, 0) > 6 * 1024 * 1024
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500'
+                }`}
+                style={{ 
+                  width: `${Math.min(100, (uploadedImages.reduce((total, file) => total + file.size, 0) / (10 * 1024 * 1024)) * 100)}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+        )}
+
         <form
           onSubmit={
             // If there are no messages, wait 200ms before submitting to allow transition to bottom
@@ -269,7 +278,7 @@ export default function ChatInput({
                   type="button"
                   onClick={handleImageButtonClick}
                   className="p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                  title="Agregar archivos (imágenes, CSV, Markdown)"
+                  title="Agregar archivos (imágenes, CSV, Markdown, PDF)"
                 >
                   <ImagePlus size={18} />
                 </button>

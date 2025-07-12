@@ -3,7 +3,7 @@ export interface Attachment {
   url: string;
   contentType: string;
   size?: number;
-  fileType?: 'image' | 'csv' | 'markdown' | 'other';
+  fileType?: 'image' | 'csv' | 'markdown' | 'pdf' | 'other';
 }
 
 export interface MessageWithAttachments {

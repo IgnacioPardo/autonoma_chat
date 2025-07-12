@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Markdown from 'react-markdown';
-import { Check, X, FileText, BarChart3 } from 'lucide-react';
+import { Check, X, FileText, BarChart3, File } from 'lucide-react';
 import MessageActions from './message-actions';
 import LoadingIndicator from './loading-indicator';
 import type { Message, Attachment } from 'ai';
@@ -42,6 +42,7 @@ export default function ChatMessages({
     if (isImageAttachment(attachment)) return 'image';
     if (attachment.contentType === 'text/csv' || attachment.name?.endsWith('.csv') === true) return 'csv';
     if (attachment.contentType === 'text/markdown' || attachment.name?.match(/\.(md|markdown)$/i) != null) return 'markdown';
+    if (attachment.contentType === 'application/pdf' || attachment.name?.endsWith('.pdf') === true) return 'pdf';
     return 'other';
   };
 
@@ -53,6 +54,8 @@ export default function ChatMessages({
         return <BarChart3 size={24} className="text-green-600" />;
       case 'markdown':
         return <FileText size={24} className="text-blue-600" />;
+      case 'pdf':
+        return <File size={24} className="text-red-600" />;
       default:
         return <FileText size={24} className="text-gray-600" />;
     }
@@ -213,8 +216,10 @@ export default function ChatMessages({
                         </div>
                       );
                     } else {
-                      // Render text file attachments with content preview
-                      const textContent = extractTextContent(attachment.url);
+                      // Render non-image file attachments
+                      // Only show content preview for CSV and Markdown, not PDFs
+                      const showContentPreview = fileType === 'csv' || fileType === 'markdown';
+                      const textContent = showContentPreview ? extractTextContent(attachment.url) : null;
                       
                       return (
                         <div 
@@ -222,7 +227,7 @@ export default function ChatMessages({
                           className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white p-3 relative z-1 max-w-sm"
                         >
                           {/* Header with icon and filename */}
-                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <div className={`flex items-center gap-2 ${showContentPreview && textContent ? 'mb-2 pb-2 border-b border-gray-100' : ''}`}>
                             {getFileIcon(attachment)}
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium text-gray-700 truncate">
@@ -234,8 +239,8 @@ export default function ChatMessages({
                             </div>
                           </div>
                           
-                          {/* Content preview */}
-                          {textContent && (
+                          {/* Content preview - only for CSV and Markdown files */}
+                          {showContentPreview && textContent && (
                             <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border font-mono leading-relaxed">
                               {textContent}
                             </div>
