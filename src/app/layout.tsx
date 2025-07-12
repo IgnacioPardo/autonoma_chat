@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { Providers } from "~/components/providers";
 
 export const metadata: Metadata = {
   title: "Autonoma Chat",
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster
           position="top-center"
           toastOptions={{

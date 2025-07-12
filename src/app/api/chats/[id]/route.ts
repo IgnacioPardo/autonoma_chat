@@ -2,15 +2,21 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '~/lib/prisma'
 import type { MessageWithAttachments } from '~/types/messages'
+import { requireAuth } from '~/lib/auth-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params
-    const chat = await prisma.chat.findUnique({
-      where: { id },
+    
+    const chat = await prisma.chat.findFirst({
+      where: { 
+        id,
+        userId: user.id 
+      },
       include: {
         messages: {
           include: {
@@ -45,6 +51,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params
     const body = await request.json() as { messages: MessageWithAttachments[] }
     const { messages } = body

@@ -5,6 +5,7 @@ import ChatSidebar from "~/components/chat-sidebar";
 import NavBar from "~/components/navbar";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
+import AuthGuard from "~/components/auth-guard";
 import { useState, useEffect, useRef } from 'react';
 import type { Attachment } from 'ai';
 import type { ChatHistory } from '~/lib/chat-history';
@@ -252,56 +253,58 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center">
-      {/* Chat Sidebar */}
-      <ChatSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onSelectChat={onSelectChat}
-        onNewChat={onNewChat}
-        currentChatId={currentChatId ?? undefined}
-        onChatDeleted={onChatDeleted}
-        refreshTrigger={sidebarRefreshTrigger}
-      />
-      
-      {/* background */}
-      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
-      
-      {/* NavBar */}
-      <NavBar 
-        onOpenSidebar={() => setSidebarOpen(true)}
-        isSaving={isSaving}
-      />
-
-      <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden">
-        <ChatMessages
-          messages={messages}
-          isLoading={isLoading}
-          editingMessageId={editingMessageId}
-          editText={editText}
-          setEditText={setEditText}
-          startEdit={startEdit}
-          saveEdit={saveEdit}
-          cancelEdit={cancelEdit}
-          copyToClipboardHandler={copyToClipboardHandler}
-          shareTextHandler={shareTextHandler}
+    <AuthGuard>
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        {/* Chat Sidebar */}
+        <ChatSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onSelectChat={onSelectChat}
+          onNewChat={onNewChat}
+          currentChatId={currentChatId ?? undefined}
+          onChatDeleted={onChatDeleted}
+          refreshTrigger={sidebarRefreshTrigger}
         />
         
-        <ChatInput
-          input={input}
-          handleInputChange={handleInputChange}
-          handleFormSubmit={handleFormSubmit}
-          handleSubmit={handleSubmit}
-          uploadedImages={uploadedImages}
-          handleImageUpload={handleImageUpload}
-          handleImageRemove={handleImageRemove}
-          setInput={setInput}
-          setUploadedImages={setUploadedImages}
-          processFileAttachments={processFileAttachments}
-          append={append}
-          messages={messages}
+        {/* background */}
+        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
+        
+        {/* NavBar */}
+        <NavBar 
+          onOpenSidebar={() => setSidebarOpen(true)}
+          isSaving={isSaving}
         />
-      </main>
-    </div>
+
+        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden">
+          <ChatMessages
+            messages={messages}
+            isLoading={isLoading}
+            editingMessageId={editingMessageId}
+            editText={editText}
+            setEditText={setEditText}
+            startEdit={startEdit}
+            saveEdit={saveEdit}
+            cancelEdit={cancelEdit}
+            copyToClipboardHandler={copyToClipboardHandler}
+            shareTextHandler={shareTextHandler}
+          />
+          
+          <ChatInput
+            input={input}
+            handleInputChange={handleInputChange}
+            handleFormSubmit={handleFormSubmit}
+            handleSubmit={handleSubmit}
+            uploadedImages={uploadedImages}
+            handleImageUpload={handleImageUpload}
+            handleImageRemove={handleImageRemove}
+            setInput={setInput}
+            setUploadedImages={setUploadedImages}
+            processFileAttachments={processFileAttachments}
+            append={append}
+            messages={messages}
+          />
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

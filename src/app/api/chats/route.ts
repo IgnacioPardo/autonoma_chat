@@ -2,10 +2,16 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '~/lib/prisma'
 import type { MessageWithAttachments } from '~/types/messages'
+import { requireAuth } from '~/lib/auth-helpers'
 
 export async function GET() {
   try {
+    const user = await requireAuth()
+    
     const chats = await prisma.chat.findMany({
+      where: {
+        userId: user.id
+      },
       include: {
         messages: {
           include: {
@@ -33,6 +39,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth()
     const body = await request.json() as { title: string; messages: MessageWithAttachments[] }
     const { title, messages } = body
 
@@ -47,6 +54,7 @@ export async function POST(request: NextRequest) {
     const chat = await prisma.chat.create({
       data: {
         title,
+        userId: user.id,
         messages: {
           create: messages.map((message: { 
             role: string; 
