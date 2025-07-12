@@ -3,6 +3,7 @@
 import { signIn, getProviders } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Github } from "lucide-react";
+import Image from "next/image";
 
 interface Provider {
   id: string;
@@ -30,10 +31,12 @@ export default function SignIn() {
       
       <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
         <div className="text-center mb-8">
-          <img 
+          <Image 
             src="/autonoma_logo.png" 
             alt="Autonoma Chat" 
-            className="h-16 w-16 mx-auto mb-4"
+            width={64}
+            height={64}
+            className="mx-auto mb-4"
           />
           <h1 className="text-2xl font-bold text-white mb-2">
             Bienvenido a Autonoma Chat

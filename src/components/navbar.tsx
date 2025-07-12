@@ -41,18 +41,28 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
           </div>
         )}
         
-        {/* User menu - only show in production or when user is logged in */}
-        {(!isDevelopment || session) && (
+        {/* User menu - show login button in development */}
+        {isDevelopment && !session ? (
+          <button
+            onClick={() => window.location.href = '/auth/signin'}
+            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors text-sm text-gray-600"
+          >
+            <User size={20} />
+            Probar Login
+          </button>
+        ) : (!isDevelopment || session) && (
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               {session?.user?.image ? (
-                <img
+                <Image
                   src={session.user.image}
                   alt={session.user.name ?? "Usuario"}
-                  className="w-6 h-6 rounded-full"
+                  width={24}
+                  height={24}
+                  className="rounded-full"
                 />
               ) : (
                 <User size={20} className="text-gray-600" />

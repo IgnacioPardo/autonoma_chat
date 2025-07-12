@@ -89,12 +89,6 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('Created chat with ID:', chat.id);
-    console.log('Chat created with', chat.messages.length, 'messages');
-    console.log('Messages with attachments:', chat.messages.map(m => ({
-      id: m.id,
-      role: m.role,
-      attachmentCount: m.attachments?.length ?? 0
-    })));
     
     return NextResponse.json(chat)
   } catch (error) {

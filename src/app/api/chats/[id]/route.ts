@@ -51,7 +51,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth()
+    await requireAuth() // Verify authentication but don't need user variable
     const { id } = await params
     const body = await request.json() as { messages: MessageWithAttachments[] }
     const { messages } = body
