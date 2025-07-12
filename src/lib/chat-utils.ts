@@ -81,17 +81,30 @@ export async function saveChatAfterMessage(
 
 /**
  * Converts uploaded files to base64 attachments for multimodal chat
+ * Supports images, CSV, and Markdown files
  */
-export async function processImageAttachments(files: File[]): Promise<Attachment[]> {
+export async function processFileAttachments(files: File[]): Promise<Attachment[]> {
   return Promise.all(
     files.map(async (file) => {
       return new Promise<Attachment>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
+          // Determine file type
+          let fileType: 'image' | 'csv' | 'markdown' | 'other' = 'other';
+          if (file.type.startsWith('image/')) {
+            fileType = 'image';
+          } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+            fileType = 'csv';
+          } else if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+            fileType = 'markdown';
+          }
+
           resolve({
             name: file.name,
             url: reader.result as string,
-            contentType: file.type, // Add the content type
+            contentType: file.type,
+            size: file.size,
+            fileType: fileType,
           });
         };
         reader.readAsDataURL(file);
@@ -99,3 +112,6 @@ export async function processImageAttachments(files: File[]): Promise<Attachment
     })
   );
 }
+
+// Keep the old function name for backward compatibility
+export const processImageAttachments = processFileAttachments;

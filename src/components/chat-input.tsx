@@ -1,7 +1,6 @@
-import { Send, Pencil, ImagePlus, X } from 'lucide-react';
+import { Send, Pencil, ImagePlus, X, FileText, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
-import type { Message } from 'ai';
-import type { Attachment } from '~/types/chat';
+import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
 
 interface ChatInputProps {
@@ -14,7 +13,7 @@ interface ChatInputProps {
   handleImageRemove: (index: number) => void;
   setInput: (value: string) => void;
   setUploadedImages: React.Dispatch<React.SetStateAction<File[]>>;
-  processImageAttachments: (images: File[]) => Promise<Attachment[]>;
+  processFileAttachments: (files: File[]) => Promise<Attachment[]>;
   append: (message: { content: string; role: 'user'; experimental_attachments: Attachment[] }) => void;
   messages: Message[];
 }
@@ -29,7 +28,7 @@ export default function ChatInput({
   handleImageRemove,
   setInput,
   setUploadedImages,
-  processImageAttachments,
+  processFileAttachments,
   append,
   messages
 }: ChatInputProps) {
@@ -37,9 +36,21 @@ export default function ChatInput({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file?.type.startsWith('image/')) {
-      handleImageUpload(file);
-      console.log('Image added:', file.name, file.type);
+    if (file) {
+      // Accept images, CSV, and Markdown files
+      const isValidFile = file.type.startsWith('image/') || 
+                         file.type === 'text/csv' || 
+                         file.name.endsWith('.csv') ||
+                         file.type === 'text/markdown' || 
+                         file.name.endsWith('.md') || 
+                         file.name.endsWith('.markdown');
+      
+      if (isValidFile) {
+        handleImageUpload(file);
+        console.log('File added:', file.name, file.type);
+      } else {
+        alert('Solo se permiten archivos de imagen, CSV y Markdown.');
+      }
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
@@ -49,6 +60,25 @@ export default function ChatInput({
 
   const handleImageButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return null; // Will show image preview
+    } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      return <BarChart3 size={32} className="text-green-600" />;
+    } else if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+      return <FileText size={32} className="text-blue-600" />;
+    }
+    return <FileText size={32} className="text-gray-600" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -71,28 +101,47 @@ export default function ChatInput({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.csv,.md,.markdown,text/csv,text/markdown"
           onChange={handleFileSelect}
           className="hidden"
         />
         
-        {/* Image previews */}
+        {/* File previews */}
         {uploadedImages.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImages.map((image, index) => (
+            {uploadedImages.map((file, index) => (
               <div key={index} className="relative group">
-                <Image
-                  src={URL.createObjectURL(image)}
-                  alt={`Preview ${index + 1}`}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                  unoptimized // Necesario para URLs de blob
-                />
+                {file.type.startsWith('image/') ? (
+                  // Image preview
+                  <Image
+                    src={URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    width={80}
+                    height={80}
+                    className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                    unoptimized // Necesario para URLs de blob
+                  />
+                ) : (
+                  // File icon preview
+                  <div className="w-20 h-20 flex flex-col items-center justify-center rounded-lg border border-gray-300 bg-gray-50 p-2">
+                    {getFileIcon(file)}
+                    <span className="text-xs text-gray-600 mt-1 truncate w-full text-center">
+                      {file.name.split('.').pop()?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                
+                {/* File info tooltip */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="truncate">{file.name}</div>
+                  <div>{formatFileSize(file.size)}</div>
+                </div>
+                
+                {/* Remove button */}
                 <button
                   onClick={() => handleImageRemove(index)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Eliminar imagen"
+                  title="Eliminar archivo"
                   type="button"
                 >
                   <X size={12} />
@@ -163,8 +212,8 @@ export default function ChatInput({
                       // Handle images like in handleFormSubmit
                       void (async () => {
                         console.log('Processing images for attachment (Enter)...');
-                        const attachments = await processImageAttachments(uploadedImages);
-                        console.log('Processed attachments (Enter):', attachments.map(a => ({ 
+                        const attachments = await processFileAttachments(uploadedImages);
+                        console.log('Processed attachments (Enter):', attachments.map((a: Attachment) => ({ 
                           name: a.name, 
                           urlLength: a.url.length,
                           contentType: a.contentType 

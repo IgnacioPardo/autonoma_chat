@@ -6,9 +6,9 @@ import NavBar from "~/components/navbar";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
 import { useState, useEffect, useRef } from 'react';
-import type { Message } from 'ai';
+import type { Message, Attachment } from 'ai';
 import type { ChatHistory } from '~/lib/chat-history';
-import { saveChatAfterMessage, processImageAttachments } from '~/lib/chat-utils';
+import { saveChatAfterMessage, processFileAttachments } from '~/lib/chat-utils';
 import { saveEditedMessage } from '~/lib/message-edit';
 import { copyToClipboard, shareText } from '~/lib/clipboard-utils';
 import { handleSelectChat, handleChatDeleted, handleNewChat } from '~/lib/chat-handlers';
@@ -133,15 +133,15 @@ export default function HomePage() {
       console.log('Images:', uploadedImages.map(img => ({ name: img.name, type: img.type, size: img.size })));
       
       // Process images for attachment
-      const attachments = await processImageAttachments(uploadedImages);
-      console.log('Processed attachments:', attachments.map(a => ({ 
+      const attachments = await processFileAttachments(uploadedImages);
+      console.log('Processed attachments:', attachments.map((a: Attachment) => ({ 
         name: a.name, 
         urlLength: a.url.length,
         contentType: a.contentType 
       })));
 
       console.log('About to call append with attachments...');
-      console.log('Attachments structure:', JSON.stringify(attachments.map(a => ({
+      console.log('Attachments structure:', JSON.stringify(attachments.map((a: Attachment) => ({
         name: a.name,
         urlLength: a.url.length,
         urlStart: a.url.substring(0, 50),
@@ -281,7 +281,7 @@ export default function HomePage() {
           handleImageRemove={handleImageRemove}
           setInput={setInput}
           setUploadedImages={setUploadedImages}
-          processImageAttachments={processImageAttachments}
+          processFileAttachments={processFileAttachments}
           append={append}
           messages={messages}
         />
