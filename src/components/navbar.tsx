@@ -20,19 +20,26 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
   };
 
   return (
-    <nav className="fixed top-0 z-10 flex w-full items-center justify-between bg-white p-8 shadow-md">
-      <button
-        onClick={onOpenSidebar}
-        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        title="Historial de chats"
-      >
-        <MessageSquare size={20} className="text-primary-violet" />
-        <span className="hidden sm:inline text-sm text-gray-600">Historial</span>
-      </button>
+    <nav className="fixed top-0 z-10 flex w-full items-center bg-white p-8 shadow-md">
+      {/* Left section */}
+      <div className="flex items-center w-1/3">
+        <button
+          onClick={onOpenSidebar}
+          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Historial de chats"
+        >
+          <MessageSquare size={20} className="text-primary-violet" />
+          <span className="hidden sm:inline text-sm text-gray-600">Historial</span>
+        </button>
+      </div>
       
-      <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
+      {/* Center section */}
+      <div className="flex justify-center w-1/3">
+        <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
+      </div>
       
-      <div className="flex items-center gap-4">
+      {/* Right section */}
+      <div className="flex items-center justify-end gap-4 w-1/3">
         {/* Indicador de guardado sutil */}
         {isSaving && (
           <div className="flex items-center gap-2 text-xs text-gray-400">

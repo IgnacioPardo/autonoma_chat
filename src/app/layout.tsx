@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   title: "Autonoma Chat",
   description: "Autonoma LLM Chat Interface - Take Home",
   icons: [{ rel: "icon", url: "/favicon.png" }],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 const geist = Geist({

@@ -275,7 +275,7 @@ export default function HomePage() {
           isSaving={isSaving}
         />
 
-        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden">
+        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe">
           <ChatMessages
             messages={messages}
             isLoading={isLoading}
@@ -289,20 +289,22 @@ export default function HomePage() {
             shareTextHandler={shareTextHandler}
           />
           
-          <ChatInput
-            input={input}
-            handleInputChange={handleInputChange}
-            handleFormSubmit={handleFormSubmit}
-            handleSubmit={handleSubmit}
-            uploadedImages={uploadedImages}
-            handleImageUpload={handleImageUpload}
-            handleImageRemove={handleImageRemove}
-            setInput={setInput}
-            setUploadedImages={setUploadedImages}
-            processFileAttachments={processFileAttachments}
-            append={append}
-            messages={messages}
-          />
+          <div className="w-full pb-4 sm:pb-8">
+            <ChatInput
+              input={input}
+              handleInputChange={handleInputChange}
+              handleFormSubmit={handleFormSubmit}
+              handleSubmit={handleSubmit}
+              uploadedImages={uploadedImages}
+              handleImageUpload={handleImageUpload}
+              handleImageRemove={handleImageRemove}
+              setInput={setInput}
+              setUploadedImages={setUploadedImages}
+              processFileAttachments={processFileAttachments}
+              append={append}
+              messages={messages}
+            />
+          </div>
         </main>
       </div>
     </AuthGuard>

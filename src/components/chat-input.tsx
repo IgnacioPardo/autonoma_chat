@@ -193,7 +193,7 @@ export default function ChatInput({
                   h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-16 py-4 
                   shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
                   focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
-                  text-sm sm:text-base
+                  text-base
                   ${messages.length === 0 
                     ? 'bg-white/75 border-gray-300/60 shadow-lg' 
                     : 'bg-white/40 border-gray-300/40 shadow-sm'
@@ -202,6 +202,11 @@ export default function ChatInput({
                 value={input}
                 placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
                 onChange={handleInputChange}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                style={{ fontSize: '16px' }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
