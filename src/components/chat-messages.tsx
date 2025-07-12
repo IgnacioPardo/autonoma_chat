@@ -3,7 +3,8 @@ import Markdown from 'react-markdown';
 import { Check, X, FileText, BarChart3, File } from 'lucide-react';
 import MessageActions from './message-actions';
 import LoadingIndicator from './loading-indicator';
-import type { Message, Attachment } from 'ai';
+import type { Message, Attachment as AIAttachment } from 'ai';
+import type { Attachment } from '~/types/chat';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -32,22 +33,46 @@ export default function ChatMessages({
 }: ChatMessagesProps) {
   
   // Helper function to determine if attachment is an image
-  const isImageAttachment = (attachment: Attachment) => {
+  const isImageAttachment = (attachment: AIAttachment | Attachment) => {
     return attachment.contentType?.startsWith('image/') ?? 
-           attachment.name?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) != null;
+           /\.(jpg|jpeg|png|gif|webp|svg)$/i.exec(attachment.name ?? '') != null;
   };
 
   // Helper function to determine file type
-  const getFileType = (attachment: Attachment) => {
+  const getFileType = (attachment: AIAttachment | Attachment) => {
+    // Use the fileType from the attachment if available (from our new processing)
+    if ('fileType' in attachment && attachment.fileType && attachment.fileType !== 'other') {
+      return attachment.fileType;
+    }
+
+    // Fallback to content type and extension detection for older attachments
+    const fileName = attachment.name?.toLowerCase() ?? '';
+    const mimeType = attachment.contentType?.toLowerCase() ?? '';
+
     if (isImageAttachment(attachment)) return 'image';
-    if (attachment.contentType === 'text/csv' || attachment.name?.endsWith('.csv') === true) return 'csv';
-    if (attachment.contentType === 'text/markdown' || attachment.name?.match(/\.(md|markdown)$/i) != null) return 'markdown';
-    if (attachment.contentType === 'application/pdf' || attachment.name?.endsWith('.pdf') === true) return 'pdf';
+    if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) return 'pdf';
+    if (mimeType === 'text/csv' || fileName.endsWith('.csv')) return 'csv';
+    if (mimeType === 'text/markdown' || /\.(md|markdown)$/.exec(fileName)) return 'markdown';
+    if (mimeType === 'application/json' || /\.(json|jsonl|ndjson)$/.exec(fileName)) return 'json';
+    if (/\.(yml|yaml)$/.exec(fileName)) return 'yaml';
+    if (mimeType.includes('xml') || fileName.endsWith('.xml')) return 'xml';
+    if (mimeType === 'text/plain' || /\.(txt|text)$/.exec(fileName)) return 'txt';
+    if (/\.(log|logs)$/.exec(fileName)) return 'log';
+
+    // Code files
+    const codeExtensions = /\.(js|mjs|jsx|ts|tsx|py|html|htm|css|sql|sh|bash|ps1|php|rb|java|c|cpp|h|hpp|cs|go|rs|swift|kt|scala|r|m|pl|lua|dart|vue|svelte)$/;
+    if (codeExtensions.exec(fileName)) return 'code';
+
+    // Config files
+    const configExtensions = /\.(toml|ini|conf|config|env|properties)$/;
+    const configFiles = /(dockerfile|makefile|rakefile|gemfile|podfile|\.gitignore|\.dockerignore|\.eslintrc|\.prettierrc|\.babelrc|tsconfig\.json|package\.json|composer\.json|pom\.xml|build\.gradle)/;
+    if (configExtensions.exec(fileName) || configFiles.exec(fileName)) return 'config';
+
     return 'other';
   };
 
   // Helper function to get file icon
-  const getFileIcon = (attachment: Attachment) => {
+  const getFileIcon = (attachment: AIAttachment | Attachment) => {
     const fileType = getFileType(attachment);
     switch (fileType) {
       case 'csv':
@@ -56,6 +81,20 @@ export default function ChatMessages({
         return <FileText size={24} className="text-blue-600" />;
       case 'pdf':
         return <File size={24} className="text-red-600" />;
+      case 'json':
+        return <FileText size={24} className="text-yellow-600" />;
+      case 'yaml':
+        return <FileText size={24} className="text-purple-600" />;
+      case 'xml':
+        return <FileText size={24} className="text-orange-600" />;
+      case 'code':
+        return <FileText size={24} className="text-indigo-600" />;
+      case 'config':
+        return <FileText size={24} className="text-teal-600" />;
+      case 'log':
+        return <FileText size={24} className="text-gray-700" />;
+      case 'txt':
+        return <FileText size={24} className="text-gray-600" />;
       default:
         return <FileText size={24} className="text-gray-600" />;
     }
@@ -218,7 +257,8 @@ export default function ChatMessages({
                     } else {
                       // Render non-image file attachments
                       // Only show content preview for CSV and Markdown, not PDFs
-                      const showContentPreview = fileType === 'csv' || fileType === 'markdown';
+                      // Show content preview for text-based files (but not PDFs which can have weird content)
+                      const showContentPreview = ['csv', 'markdown', 'json', 'yaml', 'xml', 'txt', 'code', 'config', 'log'].includes(fileType);
                       const textContent = showContentPreview ? extractTextContent(attachment.url) : null;
                       
                       return (

@@ -1,9 +1,9 @@
 export interface Attachment {
-  name: string;
+  name?: string;
   url: string;
   contentType: string;
   size?: number;
-  fileType?: 'image' | 'csv' | 'markdown' | 'pdf' | 'other';
+  fileType?: 'image' | 'csv' | 'markdown' | 'pdf' | 'json' | 'yaml' | 'xml' | 'txt' | 'code' | 'config' | 'log' | 'other';
 }
 
 export interface MessageWithAttachments {

@@ -65,8 +65,8 @@ function SignInContent() {
             <Image 
                 src="/autonoma_logo.png" 
                 alt="Autonoma Chat" 
-                width={64}
-                height={64}
+                width={80}
+                height={20}
                 className="mx-auto mb-4"
             />
         </div>
@@ -102,7 +102,7 @@ function SignInContent() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
-            Solo usuarios registrados pueden acceder a AutonomaChat
+            Solo usuarios registrados pueden acceder a Autonoma Chat
           </p>
         </div>
       </div>

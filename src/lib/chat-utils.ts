@@ -81,7 +81,7 @@ export async function saveChatAfterMessage(
 
 /**
  * Converts uploaded files to base64 attachments for multimodal chat
- * Supports images, CSV, and Markdown files with compression and size limits
+ * Supports images, text files, code files, and various document formats
  */
 export async function processFileAttachments(files: File[]): Promise<Attachment[]> {
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per file
@@ -99,16 +99,7 @@ export async function processFileAttachments(files: File[]): Promise<Attachment[
       }
 
       // Determine file type
-      let fileType: 'image' | 'csv' | 'markdown' | 'pdf' | 'other' = 'other';
-      if (file.type.startsWith('image/')) {
-        fileType = 'image';
-      } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-        fileType = 'csv';
-      } else if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-        fileType = 'markdown';
-      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        fileType = 'pdf';
-      }
+      const fileType = determineFileType(file);
 
       let processedFile: Attachment;
 
@@ -119,8 +110,8 @@ export async function processFileAttachments(files: File[]): Promise<Attachment[
         // Process PDF files
         processedFile = await processPdfFile(file);
       } else {
-        // Process other non-image files normally
-        processedFile = await processNonImageFile(file, fileType);
+        // Process all other text-based files normally
+        processedFile = await processTextFile(file, fileType);
       }
 
       processedFiles.push(processedFile);
@@ -130,6 +121,80 @@ export async function processFileAttachments(files: File[]): Promise<Attachment[
   }
 
   return processedFiles;
+}
+
+/**
+ * Determines the file type based on MIME type and file extension
+ */
+function determineFileType(file: File): 'image' | 'csv' | 'markdown' | 'pdf' | 'json' | 'yaml' | 'xml' | 'txt' | 'code' | 'config' | 'log' | 'other' {
+  const fileName = file.name.toLowerCase();
+  const mimeType = file.type.toLowerCase();
+
+  // Images
+  if (mimeType.startsWith('image/')) {
+    return 'image';
+  }
+
+  // PDF
+  if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
+    return 'pdf';
+  }
+
+  // Data formats
+  if (mimeType === 'text/csv' || fileName.endsWith('.csv')) {
+    return 'csv';
+  }
+  
+  if (mimeType === 'application/json' || fileName.endsWith('.json') || fileName.endsWith('.jsonl') || fileName.endsWith('.ndjson')) {
+    return 'json';
+  }
+
+  if (fileName.endsWith('.yml') || fileName.endsWith('.yaml')) {
+    return 'yaml';
+  }
+
+  if (mimeType === 'application/xml' || mimeType === 'text/xml' || fileName.endsWith('.xml')) {
+    return 'xml';
+  }
+
+  // Documentation formats
+  if (mimeType === 'text/markdown' || fileName.endsWith('.md') || fileName.endsWith('.markdown')) {
+    return 'markdown';
+  }
+
+  if (fileName.endsWith('.rst') || fileName.endsWith('.adoc') || fileName.endsWith('.asciidoc')) {
+    return 'markdown'; // Treat as markdown-like
+  }
+
+  // Code files
+  const codeExtensions = ['.js', '.mjs', '.jsx', '.ts', '.tsx', '.py', '.html', '.htm', '.css', '.sql', '.sh', '.bash', '.ps1', '.php', '.rb', '.java', '.c', '.cpp', '.h', '.hpp', '.cs', '.go', '.rs', '.swift', '.kt', '.scala', '.r', '.m', '.pl', '.lua', '.dart', '.vue', '.svelte'];
+  if (codeExtensions.some(ext => fileName.endsWith(ext))) {
+    return 'code';
+  }
+
+  // Configuration files
+  const configExtensions = ['.toml', '.ini', '.conf', '.config', '.env', '.properties'];
+  const configFiles = ['dockerfile', 'makefile', 'rakefile', 'gemfile', 'podfile', '.gitignore', '.dockerignore', '.eslintrc', '.prettierrc', '.babelrc', 'tsconfig.json', 'package.json', 'composer.json', 'pom.xml', 'build.gradle'];
+  if (configExtensions.some(ext => fileName.endsWith(ext)) || configFiles.some(name => fileName.includes(name))) {
+    return 'config';
+  }
+
+  // Log files
+  if (fileName.endsWith('.log') || fileName.endsWith('.logs')) {
+    return 'log';
+  }
+
+  // Plain text files
+  if (mimeType === 'text/plain' || fileName.endsWith('.txt') || fileName.endsWith('.text')) {
+    return 'txt';
+  }
+
+  // If it's any text/* MIME type, treat as text
+  if (mimeType.startsWith('text/')) {
+    return 'txt';
+  }
+
+  return 'other';
 }
 
 /**
@@ -170,7 +235,7 @@ async function compressImage(file: File, quality: number, maxDimension: number):
           const reader = new FileReader();
           reader.onload = () => {
             resolve({
-              name: file.name,
+              name: file.name, // Ensure name is always present
               url: reader.result as string,
               contentType: 'image/jpeg',
               size: blob.size,
@@ -221,7 +286,7 @@ async function processPdfFile(file: File): Promise<Attachment> {
       });
 
       return {
-        name: file.name,
+        name: file.name, // Ensure name is always present
         url: textDataUrl, // This contains the extracted text
         contentType: 'application/pdf',
         size: file.size,
@@ -243,7 +308,7 @@ async function processPdfFile(file: File): Promise<Attachment> {
     const reader = new FileReader();
     reader.onload = () => {
       resolve({
-        name: file.name,
+        name: file.name, // Ensure name is always present
         url: reader.result as string,
         contentType: file.type,
         size: file.size,
@@ -256,14 +321,14 @@ async function processPdfFile(file: File): Promise<Attachment> {
 }
 
 /**
- * Processes non-image files (CSV, Markdown, etc.)
+ * Processes text-based files (everything except images and PDFs)
  */
-async function processNonImageFile(file: File, fileType: 'csv' | 'markdown' | 'other'): Promise<Attachment> {
+async function processTextFile(file: File, fileType: 'csv' | 'markdown' | 'json' | 'yaml' | 'xml' | 'txt' | 'code' | 'config' | 'log' | 'other'): Promise<Attachment> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       resolve({
-        name: file.name,
+        name: file.name, // Ensure name is always present
         url: reader.result as string,
         contentType: file.type,
         size: file.size,
