@@ -67,6 +67,7 @@ model VerificationToken {
 model Chat {
   id        String   @id @default(cuid())
   title     String?
+  isShared  Boolean  @default(false) // Controls if chat is publicly shareable
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    String   // Owner of the chat

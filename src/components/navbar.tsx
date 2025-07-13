@@ -1,17 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { MessageSquare, LogOut, User, Settings } from "lucide-react";
+import { MessageSquare, LogOut, User, Settings, Share2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import VoiceSettings from "./voice-settings";
+import { toastUtils } from "~/lib/toast-utils";
 
 interface NavBarProps {
   onOpenSidebar: () => void;
   isSaving?: boolean;
+  currentChatId?: string | null;
 }
 
-export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
+export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBarProps) {
   const { data: session } = useSession();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -19,6 +21,23 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
+  };
+
+  const handleShareChat = async () => {
+    if (!currentChatId) {
+      toastUtils.error("No hay chat para compartir");
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/chat/${currentChatId}?shared=true`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toastUtils.success("Enlace de chat copiado al portapapeles");
+    } catch (error) {
+      console.error("Error copying share link:", error);
+      toastUtils.error("Error al copiar enlace");
+    }
   };
 
   return (
@@ -38,8 +57,20 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
       </div>
 
       {/* Center section */}
-      <div className="flex w-1/3 justify-center">
+      <div className="flex w-1/3 justify-center items-center gap-4">
         <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
+        
+        {/* Share button - only show when there's a chat */}
+        {currentChatId && (
+          <button
+            onClick={handleShareChat}
+            className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-gray-100"
+            title="Compartir chat"
+          >
+            <Share2 size={18} className="text-primary-blue" />
+            <span className="hidden text-xs text-gray-600 sm:inline">Compartir</span>
+          </button>
+        )}
       </div>
 
       {/* Right section */}

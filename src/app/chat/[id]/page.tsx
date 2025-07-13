@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import ChatSidebar from "~/components/chat-sidebar";
 import NavBar from "~/components/navbar";
 import ChatView from "~/components/chat-view";
+import PublicChatView from "~/components/public-chat-view";
 import AuthGuard from "~/components/auth-guard";
 import LoadingIndicator from "~/components/loading-indicator";
 import type { ChatHistory } from "~/lib/chat-history";
@@ -13,7 +14,9 @@ import { handleChatDeleted } from "~/lib/chat-handlers";
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const chatId = typeof params.id === "string" ? params.id : null;
+  const isSharedView = searchParams.get("shared") === "true";
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(chatId);
@@ -58,6 +61,20 @@ export default function ChatPage() {
     }
   };
 
+  // For shared view, skip auth and use public component
+  if (isSharedView && chatId) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        {/* background */}
+        <div className="animate-in fade-in fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-sm duration-300"></div>
+
+        <div className="pb-safe animate-in fade-in z-1 flex h-screen w-full flex-col items-center justify-start overflow-hidden duration-300 sm:w-4/5 md:w-2/3">
+          <PublicChatView chatId={chatId} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthGuard>
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
@@ -79,6 +96,7 @@ export default function ChatPage() {
         <NavBar
           onOpenSidebar={() => setSidebarOpen(true)}
           isSaving={isSaving}
+          currentChatId={currentChatId}
         />
 
         <div className="pb-safe animate-in fade-in z-1 flex h-screen w-full flex-col items-center justify-start overflow-hidden pt-16 duration-300 sm:w-4/5 md:w-2/3">

@@ -42,6 +42,7 @@ interface ChatMessagesProps {
   cancelEdit: () => void;
   copyToClipboardHandler: (text: string) => Promise<void>;
   shareTextHandler: (text: string) => Promise<void>;
+  readOnlyMode?: boolean;
 }
 
 export default function ChatMessages({
@@ -55,6 +56,7 @@ export default function ChatMessages({
   cancelEdit,
   copyToClipboardHandler,
   shareTextHandler,
+  readOnlyMode = false,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -583,7 +585,8 @@ export default function ChatMessages({
                       )}
                     </div>
 
-                    {!(
+                    {/* Message Actions - only show if not in read-only mode */}
+                    {!readOnlyMode && !(
                       message.toolInvocations &&
                       message.toolInvocations.length > 0 &&
                       message.role === "assistant"

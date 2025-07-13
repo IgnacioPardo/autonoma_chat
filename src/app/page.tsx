@@ -61,6 +61,7 @@ export default function HomePage() {
         <NavBar
           onOpenSidebar={() => setSidebarOpen(true)}
           isSaving={isSaving}
+          currentChatId={currentChatId}
         />
 
         <div className="pb-safe animate-in fade-in z-1 flex h-screen w-full flex-col items-center justify-start overflow-hidden pt-16 duration-300 sm:w-4/5 md:w-2/3">
