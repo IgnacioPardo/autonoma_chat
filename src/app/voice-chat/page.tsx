@@ -1,4 +1,6 @@
+
 "use client";
+import React from "react";
 
 // import { useState } from 'react';
 import { ElevenLabsChat } from "~/components/elevenlabs-chat";
@@ -13,11 +15,36 @@ export default function VoiceChatPage() {
     //     console.log('Voice transcript received:', newTranscript);
     //   };
 
+  // Animación JS para el filtro SVG
+  React.useEffect(() => {
+    const turb = document.getElementById('turb');
+    let frame = 0;
+    let running = true;
+    function animate() {
+      if (!turb) return;
+      // Oscilación senoidal entre 0.008 y 0.02
+      const freqX = 0.008 + Math.sin(frame * 0.04) * 0.008;
+      const freqY = 0.018 + Math.cos(frame * 0.03) * 0.008;
+      turb.setAttribute('baseFrequency', `${freqX.toFixed(4)} ${freqY.toFixed(4)}`);
+      frame++;
+      if (running) requestAnimationFrame(animate);
+    }
+    animate();
+    return () => { running = false; };
+  }, []);
   return (
     <AuthGuard>
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         {/* background */}
-        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
+        {/* SVG filter para distorsión senoidal */}
+        <svg className="absolute w-0 h-0">
+          <filter id="wave">
+            <feTurbulence id="turb" type="turbulence" baseFrequency="0.01 0.02" numOctaves="2" result="turb" seed="2"/>
+            <feDisplacementMap in2="turb" in="SourceGraphic" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </svg>
+        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-lg animate-wave" style={{ filter: 'url(#wave)', mixBlendMode: 'color' }}></div>
+        {/* <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-1 scale-120 blur-lg animate-wave opacity-30 rotate-180" style={{ filter: 'url(#wave)', mixBlendMode: 'color' }}></div> */}
         
         {/* NavBar */}
         {/* <NavBar 
@@ -25,7 +52,7 @@ export default function VoiceChatPage() {
           isSaving={false}
         /> */}
 
-        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 max-w-4xl flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe relative z-10">
+        <main className="flex min-h-screen w-full sm:w-4/5 md:w-2/3 max-w-4xl flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe relative z-10">
           
           {/* Header */}
           <div className="w-full pt-8 pb-6">

@@ -150,7 +150,7 @@ export default function ChatInput({
       )}
       
       {/* Input Form - posición dinámica basada en si hay mensajes */}
-      <div className={`z-[40] fixed w-5/6 sm:w-4/5 md:w-2/3 p-4 transition-all duration-1000 ease-in-out ${
+      <div className={`z-[40] fixed w-full sm:w-full md:w-2/3 p-4 transition-all duration-1000 ease-in-out ${
         messages.length === 0 
           ? "bottom-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
           : "bottom-0 left-1/2 transform -translate-x-1/2"
@@ -260,7 +260,7 @@ export default function ChatInput({
           className="mb-4 flex w-full flex-col gap-3"
         >
           {/* Input Row */}
-          <div className="flex w-full flex-row items-center gap-0 bg-white/80 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="flex w-full flex-row items-center bg-white/80 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             {/* Mini Orb Voice Chat Button */}
             <div 
               className="relative flex items-center w-14 h-14 group/mini-orb hover:w-full hover:h-full transition-all duration-300 overflow-hidden cursor-pointer animate-in fade-in"
@@ -289,8 +289,9 @@ export default function ChatInput({
               flex items-center h-full`}>
               <textarea
                 className={`
-                  text-sm sm:text-base
+                  text-xs sm:text-base
                   min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 resize-none transition-opacity duration-300 group-hover/mini-orb:opacity-0 group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in
+                  whitespace-nowrap overflow-x-auto sm:whitespace-normal sm:overflow-x-visible overflow-y
                 `}
                 value={isMiniOrbHovered ? '' : (input)}
                 placeholder={isMiniOrbHovered ? '' : (messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje...")}
@@ -300,12 +301,11 @@ export default function ChatInput({
                 autoCapitalize="off"
                 spellCheck="false"
                 rows={1}
-                style={{ fontSize: '16px', lineHeight: '1.5' }}
                 onInput={(e) => {
                   // Auto-resize textarea based on content
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 160) + 'px';
+                  // const target = e.target as HTMLTextAreaElement;
+                  // target.style.height = 'auto';
+                  // target.style.height = Math.min(target.scrollHeight, 160) + 'px';
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {

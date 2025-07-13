@@ -290,7 +290,7 @@ export default function HomePage() {
           isSaving={isSaving}
         />
 
-        <main className="flex min-h-screen w-11/12 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300 z-1">
+        <main className="flex min-h-screen w-full sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300 z-1">
           <ChatMessages
             messages={messages}
             isLoading={isLoading}
