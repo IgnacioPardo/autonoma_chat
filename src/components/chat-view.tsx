@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { Message } from "ai";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
 import LoadingIndicator from "~/components/loading-indicator";
@@ -328,7 +329,7 @@ export default function ChatView({
   }, [chatId]);
 
   // Helper function to save chat and handle URL replacement
-  const saveChatAndUpdateUrl = async (messagesData: any[]) => {
+  const saveChatAndUpdateUrl = async (messagesData: Message[]) => {
     const wasNewChat = !currentChatIdRef.current;
     
     try {
@@ -349,8 +350,12 @@ export default function ChatView({
             window.history.replaceState({}, "", `/chat/${newChatId}`);
           }
         },
-        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {}),
-        setIsSaving: onSavingStateChange ?? (() => {}),
+        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {
+          // Empty function fallback
+        }),
+        setIsSaving: onSavingStateChange ?? (() => {
+          // Empty function fallback
+        }),
       });
       
       return true;
@@ -429,8 +434,12 @@ export default function ChatView({
         setEditingMessageId,
         setEditText,
         reload,
-        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {}),
-        setIsSaving: onSavingStateChange ?? (() => {}),
+        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {
+          // Empty function fallback
+        }),
+        setIsSaving: onSavingStateChange ?? (() => {
+          // Empty function fallback
+        }),
       });
       toastUtils.success("Mensaje editado correctamente");
     } catch (error) {
