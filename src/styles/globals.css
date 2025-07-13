@@ -143,8 +143,6 @@ textarea {
 /* Orb animation styles */
 .orb {
   animation: spin 3s linear infinite;
-  width: 240px;
-  height: 240px;
   margin: auto;
   border-radius: 50%;
   position: relative;

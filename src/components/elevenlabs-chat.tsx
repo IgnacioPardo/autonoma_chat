@@ -82,7 +82,7 @@ export function ElevenLabsChat({
       <div className="flex-1 flex flex-col items-center justify-center space-y-8">
         {/* Animated Orb */}
         {/* https://www.tiktok.com/@ui_vibes/video/7256847991510748422 */}
-        <div className={`orb ${conversation.status === 'connected' ? 'orb-active' : ''} ${conversation.isSpeaking ? 'orb-speaking' : ''}`}></div>
+        <div className={`orb w-[160px] sm:w-[180px] md:w-[240px] h-[160px] sm:h-[180px] md:h-[240px] ${conversation.status === 'connected' ? 'orb-active' : ''} ${conversation.isSpeaking ? 'orb-speaking' : ''}`}></div>
         
         <div className="flex justify-center">
           <Button
