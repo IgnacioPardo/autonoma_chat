@@ -17,14 +17,23 @@ Se ha implementado Cloudinary para subir imágenes generadas y usar URLs en luga
 - `src/types/chat.ts` - Agregado `cloudinaryPublicId` al tipo `Attachment`
 - `src/lib/chat-history.ts` - Actualizado para guardar `cloudinaryPublicId` en la base de datos
 - `src/app/page.tsx` - Actualizada la interfaz para incluir `cloudinaryPublicId`
+- `src/components/chat-messages.tsx` - Actualizado para manejar URLs de Cloudinary con optimización de Next.js
+- `next.config.js` - Agregada configuración para permitir imágenes de Cloudinary
 - `prisma/schema.prisma` - Agregado campo `cloudinaryPublicId` al modelo `Attachment`
 - `src/env.js` - Agregadas variables de entorno para Cloudinary
 
 **Errores de TypeScript corregidos:**
+
 - ✅ Tipos seguros para acceso a `cloudinaryPublicId` usando interfaces extendidas
 - ✅ Interfaces tipadas para respuestas de Cloudinary API
 - ✅ Eliminación de variables no utilizadas
 - ✅ Uso de nullish coalescing (`??`) en lugar de logical OR (`||`)
+
+**Optimización de Imágenes:**
+
+- ✅ URLs de Cloudinary ahora usan optimización de Next.js Image
+- ✅ Base64 legacy sigue funcionando con `unoptimized={true}`
+- ✅ Configuración de `remotePatterns` para `res.cloudinary.com`
 
 ### 3. Variables de Entorno Requeridas
 
@@ -72,6 +81,44 @@ Para otras plataformas, agrega las variables de entorno según su documentación
 - Las imágenes generadas se almacenan en Cloudinary organizadas en carpetas
 - Se puede configurar optimización automática
 - Fácil limpieza de imágenes antiguas usando el `cloudinaryPublicId`
+
+## Solución a Error de Next.js Image
+
+### Problema Original
+```
+GET https://autonoma-chat.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com/...&w=2048&q=75 400 (Bad Request)
+```
+
+### Causa
+Next.js no tenía configurado el dominio `res.cloudinary.com` como fuente válida para imágenes externas.
+
+### Solución Implementada
+
+1. **Configuración en `next.config.js`:**
+```javascript
+const config = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+};
+```
+
+2. **Detección automática en componentes:**
+```typescript
+// Solo usar unoptimized para base64, dejar que Next.js optimice Cloudinary
+unoptimized={attachment.url.startsWith('data:')}
+```
+
+3. **Compatibilidad hacia atrás:**
+- URLs de Cloudinary → Optimización de Next.js habilitada
+- Base64 existentes → `unoptimized={true}` para compatibilidad
 
 ## Migración de Datos Existentes
 

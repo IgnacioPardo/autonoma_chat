@@ -280,6 +280,9 @@ export default function ChatMessages({
                             const result = toolInvocation.result as ImageGenerationResult;
                             
                             if (result.success && result.imageUrl) {
+                              // Check if it's a base64 data URL or external URL
+                              const isBase64 = result.imageUrl.startsWith('data:');
+                              
                               return (
                                 <div key={index} className="rounded-xl overflow-visible border-2 border-gray-200 shadow-lg bg-white relative z-10">
                                   <div className="relative z-10">
@@ -289,7 +292,7 @@ export default function ChatMessages({
                                       width={1024}
                                       height={1024}
                                       className="w-full h-auto object-cover rounded-t-lg"
-                                      unoptimized // Since it's a base64 data URL
+                                      unoptimized={isBase64} // Only unoptimized for base64, let Next.js optimize Cloudinary URLs
                                     />
                                   </div>
                                   <div className="p-3 border-t relative z-10">
@@ -395,6 +398,7 @@ export default function ChatMessages({
                                 maxWidth: isGeneratedImage ? '100%' : '300px', 
                                 objectFit: isGeneratedImage ? 'cover' : 'contain'
                               }}
+                              unoptimized={attachment.url.startsWith('data:')} // Only unoptimized for base64
                             />
                           </div>
                           
