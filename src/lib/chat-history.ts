@@ -94,33 +94,8 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
       size: att.url ? Math.round(att.url.length * 0.75) : undefined // Rough estimate of base64 size
     })) ?? [];
 
-    // Convert tool invocations (generated images) to attachments
-    if (msg.toolInvocations) {
-      msg.toolInvocations.forEach((invocation, invIndex) => {
-        if (invocation.toolName === 'generateImage' && 
-            invocation.state === 'result') {
-          
-          const typedInvocation = invocation as ImageToolInvocation;
-          if (typedInvocation.result.success && typedInvocation.result.imageUrl) {
-            
-            // Create a safe filename from the prompt (first 50 chars, replace special chars)
-            const promptSource = typedInvocation.result.prompt ?? typedInvocation.args?.prompt ?? 'image';
-            const promptForFilename = String(promptSource)
-              .substring(0, 50)
-              .replace(/[^a-zA-Z0-9\s]/g, '')
-              .replace(/\s+/g, '-')
-              .toLowerCase();
-            
-            attachments.push({
-              name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
-              contentType: 'image/png',
-              url: typedInvocation.result.imageUrl,
-              size: typedInvocation.result.imageUrl.length // Base64 size estimate
-            });
-          }
-        }
-      });
-    }
+    // Note: toolInvocations are now converted to attachments in the frontend onFinish callback
+    // so we don't need to process them here anymore
 
     return {
       role: msg.role,
@@ -170,11 +145,11 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
 export async function updateChatHistory(chatId: string, messages: Message[]): Promise<ChatHistory> {
   console.log('updateChatHistory called for chat:', chatId, 'with messages:', messages.length);
   
-  // Filter out empty messages and ensure content is valid
+  // Filter out invalid messages but allow messages with attachments even if content is empty
   const validMessages = messages.filter(msg => 
-    msg?.content && 
+    msg &&
     typeof msg.content === 'string' && 
-    msg.content.trim().length > 0 &&
+    (msg.content.trim().length > 0 || (msg.experimental_attachments && msg.experimental_attachments.length > 0)) &&
     msg.role &&
     (msg.role === 'user' || msg.role === 'assistant')
   );
@@ -187,33 +162,8 @@ export async function updateChatHistory(chatId: string, messages: Message[]): Pr
       size: att.url ? Math.round(att.url.length * 0.75) : undefined
     })) ?? [];
 
-    // Convert tool invocations (generated images) to attachments
-    if (msg.toolInvocations) {
-      msg.toolInvocations.forEach((invocation, invIndex) => {
-        if (invocation.toolName === 'generateImage' && 
-            invocation.state === 'result') {
-          
-          const typedInvocation = invocation as ImageToolInvocation;
-          if (typedInvocation.result.success && typedInvocation.result.imageUrl) {
-            
-            // Create a safe filename from the prompt (first 50 chars, replace special chars)
-            const promptSource = typedInvocation.result.prompt ?? typedInvocation.args?.prompt ?? 'image';
-            const promptForFilename = String(promptSource)
-              .substring(0, 50)
-              .replace(/[^a-zA-Z0-9\s]/g, '')
-              .replace(/\s+/g, '-')
-              .toLowerCase();
-            
-            attachments.push({
-              name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
-              contentType: 'image/png',
-              url: typedInvocation.result.imageUrl,
-              size: typedInvocation.result.imageUrl.length // Base64 size estimate
-            });
-          }
-        }
-      });
-    }
+    // Note: toolInvocations are now converted to attachments in the frontend onFinish callback
+    // so we don't need to process them here anymore
 
     return {
       role: msg.role,

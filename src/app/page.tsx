@@ -32,17 +32,172 @@ export default function HomePage() {
   const pendingSaveRef = useRef(false);
 
   const { messages, input, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
+    // Custom fetch to completely clean toolInvocations before sending to /api/chat only
+    fetch: async (input, init) => {
+      // Only clean toolInvocations for the chat API endpoint, not for other endpoints like /api/chats
+      const isApIChatRequest = typeof input === 'string' && input.includes('/api/chat') && !input.includes('/api/chats');
+      
+      if (isApIChatRequest && init?.body && typeof init.body === 'string') {
+        try {
+          const data = JSON.parse(init.body);
+          if (data.messages && Array.isArray(data.messages)) {
+            // Completely remove toolInvocations from ALL messages for stream processing
+            const cleanedMessages = data.messages.map((message: any) => {
+              if (message.toolInvocations) {
+                console.log(`Frontend: Removing toolInvocations from ${message.role} message for stream processing`);
+                const { toolInvocations, ...cleanMessage } = message;
+                return cleanMessage;
+              }
+              return message;
+            });
+            
+            console.log('Frontend: Cleaned messages for /api/chat:', cleanedMessages.length);
+            
+            init.body = JSON.stringify({ ...data, messages: cleanedMessages });
+          }
+        } catch (e) {
+          console.warn('Failed to parse request body for toolInvocation cleaning:', e);
+        }
+      }
+      
+      return fetch(input, init);
+    },
     onFinish: (message) => {
       console.log('=== onFinish: Assistant response completed ===');
-      console.log('Assistant message:', {
+      console.log('Assistant message FULL DETAILS:', {
+        id: message.id,
         role: message.role,
-        content: message.content.substring(0, 30) + '...'
+        content: message.content,
+        contentLength: message.content.length,
+        hasToolInvocations: !!message.toolInvocations?.length,
+        toolInvocationsCount: message.toolInvocations?.length ?? 0,
+        toolInvocations: message.toolInvocations?.map(inv => ({
+          toolName: inv.toolName,
+          state: inv.state,
+          hasResult: 'result' in inv
+        })),
+        hasAttachments: !!message.experimental_attachments?.length,
+        attachmentsCount: message.experimental_attachments?.length ?? 0
       });
       
-      // Mark that we have a pending save
-      // The useEffect will handle the actual saving when loading finishes
-      pendingSaveRef.current = true;
-      console.log('🔄 Marked conversation for saving when loading finishes');
+      // Convert any generated images from toolInvocations to regular attachments
+      if (message.toolInvocations && message.toolInvocations.length > 0) {
+        console.log('Converting toolInvocations to attachments...');
+        
+        const generatedImages: any[] = [];
+        message.toolInvocations.forEach((invocation, invIndex) => {
+          if (invocation.toolName === 'generateImage' && 
+              invocation.state === 'result' && 
+              'result' in invocation) {
+            
+            const result = invocation.result as any;
+            if (result.success && result.imageUrl) {
+              // Create filename from prompt
+              const promptSource = result.prompt ?? 'image';
+              const promptForFilename = String(promptSource)
+                .substring(0, 50)
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .replace(/\s+/g, '-')
+                .toLowerCase();
+              
+              generatedImages.push({
+                name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
+                contentType: 'image/png',
+                url: result.imageUrl,
+                // Store metadata about the generation for UI display
+                metadata: {
+                  prompt: result.prompt,
+                  size: result.size,
+                  quality: result.quality,
+                  isGenerated: true
+                }
+              });
+            }
+          }
+        });
+        
+        if (generatedImages.length > 0) {
+          console.log('Adding generated images as attachments:', generatedImages.length);
+          
+          // Update the message to remove toolInvocations and add attachments
+          // IMPORTANT: Ensure message has some content for better UX
+          const updatedMessage = {
+            ...message,
+            content: message.content.trim() || `Generated ${generatedImages.length} image${generatedImages.length > 1 ? 's' : ''}`,
+            experimental_attachments: (message.experimental_attachments || []).concat(generatedImages),
+            toolInvocations: undefined // Remove toolInvocations completely
+          };
+          
+          console.log('Updated message for state:', {
+            id: updatedMessage.id,
+            role: updatedMessage.role,
+            content: updatedMessage.content,
+            contentLength: updatedMessage.content.length,
+            attachmentsCount: updatedMessage.experimental_attachments?.length ?? 0,
+            hasToolInvocations: !!updatedMessage.toolInvocations
+          });
+          
+          // Update the messages state to replace the current message
+          setMessages(prevMessages => {
+            const newMessages = [...prevMessages];
+            const lastIndex = newMessages.length - 1;
+            if (lastIndex >= 0 && newMessages[lastIndex]?.id === message.id) {
+              newMessages[lastIndex] = updatedMessage;
+            }
+            
+            console.log('=== Updated messages with generated images ===');
+            console.log('Total messages:', newMessages.length);
+            console.log('All messages details:', newMessages.map((m, i) => ({
+              index: i,
+              id: m.id,
+              role: m.role,
+              content: m.content.substring(0, 50) + (m.content.length > 50 ? '...' : ''),
+              contentLength: m.content.length,
+              hasAttachments: !!m.experimental_attachments?.length,
+              attachmentCount: m.experimental_attachments?.length ?? 0,
+              attachmentNames: m.experimental_attachments?.map(att => att.name) ?? []
+            })));
+            
+            // Save immediately after updating messages with generated images
+            setTimeout(() => {
+              console.log('🔄 Saving conversation with generated images...');
+              console.log('Messages to save:', newMessages.map(m => ({
+                role: m.role,
+                content: m.content.substring(0, 30) + '...',
+                contentLength: m.content.length,
+                attachments: m.experimental_attachments?.length ?? 0
+              })));
+              
+              (async () => {
+                try {
+                  await saveChatAfterMessage(newMessages, {
+                    currentChatId: currentChatIdRef.current,
+                    setCurrentChatId,
+                    setSidebarRefreshTrigger,
+                    setIsSaving
+                  });
+                  console.log('✅ Conversation with generated images saved successfully');
+                } catch (error) {
+                  console.error('❌ Error saving conversation with generated images:', error);
+                  toastUtils.apiError(error, 'Error al guardar el chat');
+                }
+              })().catch(console.error);
+            }, 100);
+            
+            return newMessages;
+          });
+        } else {
+          // No generated images, but we still need to save the assistant message
+          console.log('No generated images found, but saving assistant message with toolInvocations');
+          pendingSaveRef.current = true;
+          console.log('🔄 Marked conversation for saving when loading finishes');
+        }
+      } else {
+        // No toolInvocations, just mark for regular save
+        console.log('No toolInvocations found in assistant message');
+        pendingSaveRef.current = true;
+        console.log('🔄 Marked conversation for saving when loading finishes');
+      }
     },
     onError: (error) => {
       console.error('Chat error:', error);
@@ -52,6 +207,10 @@ export default function HomePage() {
         toastUtils.error('Los archivos adjuntos son demasiado grandes. Intenta reducir el tamaño o número de archivos.');
       } else if (error.message.includes('Attachments too large')) {
         toastUtils.error('Los archivos adjuntos exceden el límite de 20MB. Por favor, reduce el tamaño de los archivos.');
+      } else if (error.message.includes('An error occurred')) {
+        // Specific handling for stream errors
+        console.warn('Stream error detected, this may be related to tool processing.');
+        toastUtils.error('Error en el procesamiento. La conversación puede continuar normalmente.');
       } else {
         toastUtils.apiError(error, 'Error al enviar el mensaje');
       }
@@ -67,7 +226,7 @@ export default function HomePage() {
     if (wasLoading && !isNowLoading && pendingSaveRef.current) {
       pendingSaveRef.current = false;
       
-      console.log('=== Loading finished, saving complete conversation ===');
+      console.log('=== Loading finished, checking if save needed ===');
       console.log('Final messages count:', messages.length);
       
       const finalMessages = messages.map((msg, i) => ({
@@ -79,7 +238,18 @@ export default function HomePage() {
       }));
       console.log('Final messages:', finalMessages);
       
-      // Save the complete conversation
+      // Check if the last message has attachments that might have been processed in onFinish
+      const lastMessage = messages[messages.length - 1];
+      const hasGeneratedAttachments = lastMessage?.experimental_attachments?.some((att: any) => 
+        att.metadata && att.metadata.isGenerated
+      );
+      
+      if (hasGeneratedAttachments) {
+        console.log('🔄 Generated images already saved in onFinish, skipping duplicate save');
+        return;
+      }
+      
+      // Save the complete conversation for non-image-generation responses
       setTimeout(() => {
         (async () => {
           try {
@@ -290,7 +460,7 @@ export default function HomePage() {
           isSaving={isSaving}
         />
 
-        <main className="flex min-h-screen w-full sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300 z-1">
+        <main className="pt-16 flex min-h-screen w-full sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300 z-1">
           <ChatMessages
             messages={messages}
             isLoading={isLoading}
@@ -303,24 +473,23 @@ export default function HomePage() {
             copyToClipboardHandler={copyToClipboardHandler}
             shareTextHandler={shareTextHandler}
           />
-          
-          <div className="w-full pb-4 sm:pb-8 animate-in fade-in duration-300">
-            <ChatInput
-              input={input}
-              handleInputChange={handleTextareaChange}
-              handleFormSubmit={handleFormSubmit}
-              handleSubmit={handleSubmit}
-              uploadedImages={uploadedImages}
-              handleImageUpload={handleImageUpload}
-              handleImageRemove={handleImageRemove}
-              setInput={setInput}
-              setUploadedImages={setUploadedImages}
-              processFileAttachments={processFileAttachments}
-              append={append}
-              messages={messages}
-            />
-          </div>
         </main>
+
+        {/* Chat Input with dynamic positioning - outside main to allow centering */}
+        <ChatInput
+          input={input}
+          handleInputChange={handleTextareaChange}
+          handleFormSubmit={handleFormSubmit}
+          handleSubmit={handleSubmit}
+          uploadedImages={uploadedImages}
+          handleImageUpload={handleImageUpload}
+          handleImageRemove={handleImageRemove}
+          setInput={setInput}
+          setUploadedImages={setUploadedImages}
+          processFileAttachments={processFileAttachments}
+          append={append}
+          messages={messages}
+        />
       </div>
     </AuthGuard>
   );

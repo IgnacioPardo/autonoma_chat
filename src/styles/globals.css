@@ -90,8 +90,22 @@ textarea {
   --color-border-violet: #8d4dd1;
 }
 
-@utility mask-gradient {
+/* Custom mask gradient utility */
+.mask-gradient {
   mask: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0));
+}
+
+/* Custom backdrop blur utilities */
+.backdrop-blur-xs {
+  backdrop-filter: blur(2px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(8px);
 }
 
 /* Custom styles for markdown in chat bubbles */

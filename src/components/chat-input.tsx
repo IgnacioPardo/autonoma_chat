@@ -145,7 +145,7 @@ export default function ChatInput({
       {/* Background Blur behind input - solo visible cuando hay mensajes */}
       {messages.length > 0 && (
         <div 
-          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient z-[30] animate-in fade-in duration-300"
+          className="fixed bottom-0 w-full h-[140px] backdrop-blur-sm mask-gradient z-[30] animate-in fade-in duration-300"
         ></div>
       )}
       

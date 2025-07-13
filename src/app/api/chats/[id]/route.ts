@@ -67,12 +67,11 @@ export async function PUT(
     //   contentLength: m?.content?.length
     // })));
 
-    // Filter out empty or invalid messages
+    // Filter out invalid messages but allow messages with attachments even if content is empty
     const validMessages = messages.filter((message: MessageWithAttachments): message is MessageWithAttachments => 
       Boolean(message) &&
-      Boolean(message.content) &&
       typeof message.content === 'string' &&
-      message.content.trim().length > 0 &&
+      (message.content.trim().length > 0 || Boolean(message.attachments && message.attachments.length > 0)) &&
       Boolean(message.role) &&
       (message.role === 'user' || message.role === 'assistant')
     );

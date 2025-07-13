@@ -64,12 +64,48 @@ export async function POST(req: Request) {
       role: m.role,
       content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : 'multipart content',
       hasAttachments: (m.experimental_attachments?.length ?? 0) > 0,
+      hasToolInvocations: !!m.toolInvocations?.length,
       attachmentSizes: m.experimental_attachments?.map(a => Math.round((a.url.length * 0.75) / 1024)) ?? []
     })));
 
+    // Additional backend cleanup for safety (frontend should have already cleaned)
+    const cleanMessages = messages.map((message, index) => {
+      console.log(message);
+      console.log((message.parts?.length == 2 && message.parts?.[1]?.type === 'tool-invocation') ? message.parts?.[1]?.toolInvocation : 'No tool invocation found in parts');
+      /* {
+        role: 'user',
+        content: 'Draw a ferrari f40',
+        parts: [ { type: 'text', text: 'Draw a ferrari f40' } ]
+      }
+      {
+        role: 'assistant',
+        content: '',
+        parts: [
+          { type: 'step-start' },
+          { type: 'tool-invocation', toolInvocation: [Object] }
+        ]
+      }
+      {
+        role: 'user',
+        content: 'Do you like ferraris?',
+        parts: [ { type: 'text', text: 'Do you like ferraris?' } ]
+      } */
+      if (message.parts?.length && message.parts.some(part => part.type === 'tool-invocation')) {
+        console.log(
+          `Backend: Additional cleaning of toolInvocations from message ${index} (${message.role})`,
+        );
+        // Remove "parts" key from assistant messages
+        const { parts, ...cleanMessage } = message;
+        return cleanMessage;
+      }
+      return message;
+    });
+
+    console.log('Backend: Final clean messages count:', cleanMessages.length);
+
     const result = streamText({
       model: openai("gpt-4o"), // gpt-4o supports vision
-      messages: convertToCoreMessages(messages),
+      messages: convertToCoreMessages(cleanMessages),
       tools: {
         generateImage: tool({
           description: 'Generate an image based on a text description using DALL-E 3',

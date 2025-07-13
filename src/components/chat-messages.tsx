@@ -5,6 +5,7 @@ import MessageActions from './message-actions';
 import LoadingIndicator from './loading-indicator';
 import type { Message, Attachment as AIAttachment } from 'ai';
 import type { Attachment } from '~/types/chat';
+import { useRef, useEffect } from 'react';
 
 interface ImageGenerationResult {
   success: boolean;
@@ -46,6 +47,13 @@ export default function ChatMessages({
   copyToClipboardHandler,
   shareTextHandler
 }: ChatMessagesProps) {
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
   
   // Helper function to determine if attachment is an image
   const isImageAttachment = (attachment: AIAttachment | Attachment) => {
@@ -139,9 +147,23 @@ export default function ChatMessages({
       return '';
     }
   };
+  
   return (
-    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 overflow-x-hidden max-w-full scroll-smooth overflow-y-auto h-full min-h-0">
-      {messages.map((message) => {
+    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 px-5 sm:px-0 overflow-x-hidden max-w-full scroll-smooth h-full min-h-0">
+      {messages.length === 0 ? (
+        /* Welcome screen when no messages - positioned to work with dynamic input */
+        // <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        //   <h1 className="text-4xl font-bold mb-4 text-white drop-shadow-lg">
+        //     Autónoma Chat
+        //   </h1>
+        //   <p className="text-lg text-white/80 drop-shadow mb-8">
+        //     ¿En qué puedo ayudarte hoy?
+        //   </p>
+        // </div>
+        <></>
+
+      ) : (
+        messages.map((message) => {
         const messageText = message.content;
         // Check if message has attachments (images)
         const hasAttachments = message.experimental_attachments && message.experimental_attachments.length > 0;
@@ -173,7 +195,7 @@ export default function ChatMessages({
                 className={`group relative rounded-2xl break-words max-w-full mb-12 overflow-visible ${
                   // Special styling for messages with tool invocations (like image generation)
                   message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
-                    ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
+                  ? "bg-transparent border-none shadow-none backdrop-blur-bg-gradient-to-t none px-0 py-0"
                     // Special styling for user messages with only attachments (no text)
                     : !messageText.trim() && hasAttachments && message.role === "user"
                     ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
@@ -337,21 +359,47 @@ export default function ChatMessages({
                     const fileType = getFileType(attachment);
                     
                     if (fileType === 'image') {
+                      // Check if this is a generated image
+                      const isGeneratedImage = (attachment as any).metadata?.isGenerated === true;
+                      const generationMetadata = (attachment as any).metadata;
+                      
                       // Render image attachments
                       return (
                         <div 
                           key={index} 
-                          className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white p-1 relative z-1"
+                          className={`rounded-xl overflow-hidden border-2 shadow-lg bg-white relative z-1 ${
+                            isGeneratedImage ? 'border-gray-200' : 'border-gray-200'
+                          }`}
                         >
-                          <Image
-                            src={attachment.url}
-                            alt={attachment.name ?? `Image ${index + 1}`}
-                            className="rounded-lg max-w-full h-auto relative z-1"
-                            width={300}
-                            height={250}
-                            style={{ maxHeight: '250px', maxWidth: '300px', objectFit: 'contain' }}
-                          />
-                          {attachment.name && (
+                          <div className={isGeneratedImage ? 'p-0' : 'p-1'}>
+                            <Image
+                              src={attachment.url}
+                              alt={attachment.name ?? `Image ${index + 1}`}
+                              className="max-w-full h-auto relative z-1 rounded-t-lg"
+                              width={isGeneratedImage ? 1024 : 300}
+                              height={isGeneratedImage ? 1024 : 250}
+                              style={{ 
+                                maxHeight: isGeneratedImage ? 'auto' : '250px', 
+                                maxWidth: isGeneratedImage ? '100%' : '300px', 
+                                objectFit: isGeneratedImage ? 'cover' : 'contain'
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Show generation info for generated images */}
+                          {isGeneratedImage && generationMetadata?.prompt && (
+                            <div className="p-3 border-t relative z-1">
+                              <div className="text-xs text-gray-600 mb-1 break-words">
+                                <span className="font-medium">Prompt:</span> {generationMetadata.prompt}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {generationMetadata.size} • {generationMetadata.quality} quality
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Show filename for regular uploaded images */}
+                          {!isGeneratedImage && attachment.name && (
                             <div className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded-b-lg relative z-1">
                               {attachment.name}
                             </div>
@@ -398,8 +446,9 @@ export default function ChatMessages({
             </div>
           </div>
         );
-      })}
-
+        })
+      )}
+      <div ref={messagesEndRef} />
       {/* Loading indicator when assistant is typing */}
       <LoadingIndicator isLoading={isLoading} />
     </div>
