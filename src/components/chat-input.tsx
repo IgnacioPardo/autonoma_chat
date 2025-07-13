@@ -8,7 +8,7 @@ import { useSpeech } from '../hooks/use-speech';
 
 interface ChatInputProps {
   input: string;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   uploadedImages: File[];
@@ -256,15 +256,15 @@ export default function ChatInput({
           className="mb-4 flex w-full flex-col gap-3"
         >
           {/* Input Row */}
-          <div className="flex w-full flex-row items-center gap-3">
+          <div className="flex w-full flex-row items-end gap-3">
             <div className="relative flex-1">
               <Pencil 
                 size={18} 
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-violet z-20 transition-colors duration-300" 
+                className="absolute left-4 top-4 text-primary-violet z-20 transition-colors duration-300" 
               />
               
               {/* File upload button inside input on the right */}
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1 z-20">
+              <div className="absolute right-4 top-4 flex items-center gap-1 z-20">
                 <VoiceInput
                   isListening={isListening}
                   isSupported={isSupported}
@@ -284,12 +284,12 @@ export default function ChatInput({
                 </button>
               </div>
               
-              <input
+              <textarea
                 className={`
-                  h-[56px] w-full rounded-2xl border border-gray-300 pl-12 pr-24 py-4 
-                  shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out
+                  min-h-[56px] max-h-40 w-full rounded-2xl border border-gray-300 pl-12 pr-24 py-4 
+                  shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out resize-none
                   focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
-                  text-base
+                  text-base overflow-y-auto
                   ${messages.length === 0 
                     ? 'bg-white/75 border-gray-300/60 shadow-lg' 
                     : 'bg-white/40 border-gray-300/40 shadow-sm'
@@ -302,7 +302,17 @@ export default function ChatInput({
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
-                style={{ fontSize: '16px' }}
+                rows={1}
+                style={{ 
+                  fontSize: '16px',
+                  lineHeight: '1.5'
+                }}
+                onInput={(e) => {
+                  // Auto-resize textarea based on content
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 160) + 'px'; // max-h-40 = 160px
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -331,12 +341,23 @@ export default function ChatInput({
                         
                         setInput('');
                         setUploadedImages([]);
+                        
+                        // Reset textarea height
+                        const textarea = e.target as HTMLTextAreaElement;
+                        textarea.style.height = 'auto';
+                        
                         console.log('Cleared form after sending (Enter)');
                       })();
                     } else {
                       // Handle text-only like normal - create a synthetic form event
                       const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent<HTMLFormElement>;
                       void handleSubmit(formEvent);
+                      
+                      // Reset textarea height after sending
+                      setTimeout(() => {
+                        const textarea = e.target as HTMLTextAreaElement;
+                        textarea.style.height = 'auto';
+                      }, 0);
                     }
                   }
                 }}
@@ -346,7 +367,7 @@ export default function ChatInput({
             <button
               type="submit"
               disabled={!input.trim() && uploadedImages.length === 0}
-              className="from-primary-blue to-primary-violet border-border-violet flex h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="from-primary-blue to-primary-violet border-border-violet flex min-h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-end"
             >
               <Send size={20} />
               <span className="hidden sm:inline">Enviar</span>

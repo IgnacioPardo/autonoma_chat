@@ -1,4 +1,4 @@
-import type { Message } from 'ai';
+import type { Message, ToolInvocation } from 'ai';
 import type { ChatHistory } from './chat-history';
 import { getChatById } from './chat-history';
 import { toastUtils } from './toast-utils';
@@ -41,18 +41,62 @@ export async function handleSelectChat(
     });
     
     // Convert ChatHistory messages to the format expected by useChat
-    const convertedMessages: Message[] = fullChat.messages.map((msg) => ({
-      id: msg.id,
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content,
-      createdAt: new Date(msg.createdAt),
-      // Convert attachments from DB format to experimental_attachments format
-      experimental_attachments: msg.attachments?.map(att => ({
-        name: att.name,
-        url: att.url,
-        contentType: att.contentType
-      })) ?? undefined
-    }));
+    const convertedMessages: Message[] = fullChat.messages.map((msg) => {
+      const baseMessage: Message = {
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: new Date(msg.createdAt)
+      };
+      
+      // Separate generated images from regular attachments
+      const generatedImages = msg.attachments?.filter(att => 
+        att.name.startsWith('generated-image-') && att.contentType === 'image/png'
+      ) ?? [];
+      
+      const regularAttachments = msg.attachments?.filter(att => 
+        !att.name.startsWith('generated-image-') || att.contentType !== 'image/png'
+      ) ?? [];
+      
+      // Convert regular attachments to experimental_attachments
+      if (regularAttachments.length > 0) {
+        baseMessage.experimental_attachments = regularAttachments.map(att => ({
+          name: att.name,
+          url: att.url,
+          contentType: att.contentType
+        }));
+      }
+      
+      // Convert generated images back to toolInvocations
+      if (generatedImages.length > 0) {
+        baseMessage.toolInvocations = generatedImages.map(att => {
+          // Extract prompt from filename: "generated-image-{prompt}-{index}.png"
+          let extractedPrompt = 'Generated image';
+          const nameParts = att.name.match(/^generated-image-(.+)-\d+\.png$/);
+          if (nameParts && nameParts[1]) {
+            extractedPrompt = nameParts[1].replace(/-/g, ' ');
+          }
+          
+          return {
+            toolCallId: att.name.replace(/^generated-image-/, '').replace(/\.png$/, ''),
+            toolName: 'generateImage',
+            args: {
+              prompt: extractedPrompt
+            },
+            result: {
+              success: true,
+              imageUrl: att.url,
+              prompt: extractedPrompt,
+              size: '1024x1024',
+              quality: 'standard'
+            },
+            state: 'result' as const
+          };
+        });
+      }
+      
+      return baseMessage;
+    });
     
     console.log('Converted messages with attachments:', convertedMessages.map(m => ({
       role: m.role,

@@ -261,6 +261,12 @@ export default function HomePage() {
     await shareText(text);
   };
 
+  // Wrapper for handleInputChange to work with textarea
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Just update the input state directly since useChat hook manages it
+    setInput(e.target.value);
+  };
+
   return (
     <AuthGuard>
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
@@ -301,7 +307,7 @@ export default function HomePage() {
           <div className="w-full pb-4 sm:pb-8">
             <ChatInput
               input={input}
-              handleInputChange={handleInputChange}
+              handleInputChange={handleTextareaChange}
               handleFormSubmit={handleFormSubmit}
               handleSubmit={handleSubmit}
               uploadedImages={uploadedImages}

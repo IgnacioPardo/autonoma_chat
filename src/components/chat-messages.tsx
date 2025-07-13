@@ -276,15 +276,21 @@ export default function ChatMessages({
                               );
                             } else {
                               return (
-                                <div key={index} className="rounded-xl border-2 border-red-200 bg-red-50 p-3 relative z-10">
-                                  <div className="text-sm text-red-700">
-                                    <span className="font-medium">Error generando imagen:</span> {result.error}
+                                <div key={index} className="rounded-xl border-2 border-red-200 bg-red-50 p-4 relative z-10">
+                                  <div className="text-sm text-red-700 mb-2">
+                                    <span className="font-medium">❌ Error generando imagen</span>
+                                  </div>
+                                  <div className="text-sm text-red-600 mb-2 break-words">
+                                    {result.error || 'Error desconocido'}
                                   </div>
                                   {result.prompt && (
-                                    <div className="text-xs text-red-600 mt-1 break-words">
-                                      Prompt: {result.prompt}
+                                    <div className="text-xs text-red-600 mt-2 break-words bg-red-100 p-2 rounded">
+                                      <span className="font-medium">Prompt:</span> {result.prompt}
                                     </div>
                                   )}
+                                  <div className="mt-3 text-xs text-red-500">
+                                    💡 Consejos: Verifica tu conexión a internet y la configuración de OpenAI API
+                                  </div>
                                 </div>
                               );
                             }

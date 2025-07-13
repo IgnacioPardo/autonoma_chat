@@ -92,7 +92,11 @@ export async function POST(req: Request) {
                 throw new Error(`Image generation failed: ${response.statusText}`);
               }
 
-              const data = await response.json() as { imageUrl: string };
+              const data = await response.json() as { 
+                success?: boolean;
+                imageUrl?: string; 
+                error?: string;
+              };
               
               return {
                 success: true,

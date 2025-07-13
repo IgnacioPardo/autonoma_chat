@@ -69,17 +69,48 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
   
   chatTitle ??= generateFallbackTitle(messages)
 
-  const messagesToSave = messages.map((msg, index) => ({
-    role: msg.role,
-    content: msg.content,
-    position: index,
-    attachments: msg.experimental_attachments?.map(att => ({
+  const messagesToSave = messages.map((msg, index) => {
+    let attachments = msg.experimental_attachments?.map(att => ({
       name: att.name ?? 'Unknown',
       contentType: att.contentType ?? 'application/octet-stream',
       url: att.url,
       size: att.url ? Math.round(att.url.length * 0.75) : undefined // Rough estimate of base64 size
-    })) ?? []
-  }));
+    })) ?? [];
+
+    // Convert tool invocations (generated images) to attachments
+    if (msg.toolInvocations) {
+      msg.toolInvocations.forEach((invocation, invIndex) => {
+        if (invocation.toolName === 'generateImage' && 
+            invocation.state === 'result' && 
+            invocation.result?.success && 
+            invocation.result?.imageUrl) {
+          
+          const result = invocation.result as { success: boolean; imageUrl: string; prompt?: string; };
+          
+          // Create a safe filename from the prompt (first 50 chars, replace special chars)
+          const promptForFilename = (result.prompt || invocation.args?.prompt || 'image')
+            .substring(0, 50)
+            .replace(/[^a-zA-Z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .toLowerCase();
+          
+          attachments.push({
+            name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
+            contentType: 'image/png',
+            url: result.imageUrl,
+            size: result.imageUrl.length // Base64 size estimate
+          });
+        }
+      });
+    }
+
+    return {
+      role: msg.role,
+      content: msg.content,
+      position: index,
+      attachments
+    };
+  });
   
   console.log('Messages to save with attachments:', messagesToSave.map(m => ({
     role: m.role,
@@ -130,17 +161,48 @@ export async function updateChatHistory(chatId: string, messages: Message[]): Pr
     (msg.role === 'user' || msg.role === 'assistant')
   );
   
-  const messagesToSave = validMessages.map((msg, index) => ({
-    role: msg.role,
-    content: msg.content.trim(),
-    position: index,
-    attachments: msg.experimental_attachments?.map(att => ({
+  const messagesToSave = validMessages.map((msg, index) => {
+    let attachments = msg.experimental_attachments?.map(att => ({
       name: att.name ?? 'Unknown',
       contentType: att.contentType ?? 'application/octet-stream',
       url: att.url,
       size: att.url ? Math.round(att.url.length * 0.75) : undefined
-    })) ?? []
-  }));
+    })) ?? [];
+
+    // Convert tool invocations (generated images) to attachments
+    if (msg.toolInvocations) {
+      msg.toolInvocations.forEach((invocation, invIndex) => {
+        if (invocation.toolName === 'generateImage' && 
+            invocation.state === 'result' && 
+            invocation.result?.success && 
+            invocation.result?.imageUrl) {
+          
+          const result = invocation.result as { success: boolean; imageUrl: string; prompt?: string; };
+          
+          // Create a safe filename from the prompt (first 50 chars, replace special chars)
+          const promptForFilename = (result.prompt || invocation.args?.prompt || 'image')
+            .substring(0, 50)
+            .replace(/[^a-zA-Z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .toLowerCase();
+          
+          attachments.push({
+            name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
+            contentType: 'image/png',
+            url: result.imageUrl,
+            size: result.imageUrl.length // Base64 size estimate
+          });
+        }
+      });
+    }
+
+    return {
+      role: msg.role,
+      content: msg.content.trim(),
+      position: index,
+      attachments
+    };
+  });
   
   console.log('Original messages count:', messages.length);
   console.log('Valid messages count:', validMessages.length);
