@@ -642,7 +642,7 @@ export default function ChatMessages({
                                   }`}
                                 >
                                   <div
-                                    className={isGeneratedImage ? "p-0" : "p-1"}
+                                    className={isGeneratedImage ? "p-0" : "p-0"}
                                   >
                                     <Image
                                       src={attachment.url}
@@ -650,18 +650,12 @@ export default function ChatMessages({
                                         attachment.name ?? `Image ${index + 1}`
                                       }
                                       className="relative z-1 h-auto max-w-full rounded-t-lg transition-transform duration-300 group-hover:scale-[1.02]"
-                                      width={isGeneratedImage ? 1024 : 300}
-                                      height={isGeneratedImage ? 1024 : 250}
+                                      width={800}
+                                      height={600}
                                       style={{
-                                        maxHeight: isGeneratedImage
-                                          ? "auto"
-                                          : "250px",
-                                        maxWidth: isGeneratedImage
-                                          ? "100%"
-                                          : "300px",
-                                        objectFit: isGeneratedImage
-                                          ? "cover"
-                                          : "contain",
+                                        maxHeight: "600px",
+                                        maxWidth: "100%",
+                                        objectFit: "contain",
                                       }}
                                       unoptimized={attachment.url.startsWith(
                                         "data:",
