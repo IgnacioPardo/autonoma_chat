@@ -32,7 +32,7 @@ export async function shareText(text: string): Promise<void> {
       if (err instanceof Error && err.name === "AbortError") {
         return; // User cancelled sharing
       }
-      console.error("Error sharing: ", err);
+      // console.error("Error sharing: ", err);
       toastUtils.error("Error al compartir, copiando al portapapeles...");
       // Fallback: copy to clipboard
       await copyToClipboard(text);
