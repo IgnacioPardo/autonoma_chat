@@ -120,6 +120,92 @@ unoptimized={attachment.url.startsWith('data:')}
 - URLs de Cloudinary → Optimización de Next.js habilitada
 - Base64 existentes → `unoptimized={true}` para compatibilidad
 
+## Mejora de UX: Transiciones Suaves de Loading
+
+### Problema
+Aparecía momentáneamente una burbuja vacía y luego una burbuja de carga antes de mostrar la tarjeta de procesamiento de imagen.
+
+### Solución Implementada
+
+1. **Simplificación de lógica de loading:**
+```typescript
+function hasActiveStreamingOrGeneration(messages: Message[]): boolean {
+  if (messages.length === 0) return false;
+  const lastMessage = messages[messages.length - 1];
+  
+  // Si el último mensaje es del assistant, asumir que el streaming ha comenzado
+  if (lastMessage?.role === 'assistant') {
+    return true;
+  }
+  
+  return false;
+}
+```
+
+2. **Animaciones suaves agregadas:**
+- `LoadingIndicator`: `animate-in fade-in duration-200`
+- Tarjeta de "Generando imagen...": `animate-in fade-in duration-300`
+- Imagen completada: `animate-in fade-in duration-500`
+
+3. **Resultado:**
+- ✅ Eliminación del parpadeo entre estados
+- ✅ Transición directa a tarjeta de procesamiento
+- ✅ Experiencia más fluida para el usuario
+
+## Mejora de UX: Sidebar de Historial Mejorado
+
+### Problemas Originales
+1. El sidebar del historial de chat no era scrollable correctamente
+2. Faltaba indicador de carga al cargar el historial
+3. No había feedback visual al seleccionar un chat individual
+
+### Soluciones Implementadas
+
+1. **Scrolling Mejorado:**
+```typescript
+// Estructura de flexbox corregida
+<div className="flex h-full w-80 flex-col">
+  {/* Header fijo */}
+  <div className="border-b">...</div>
+  
+  {/* Lista scrollable */}
+  <div className="flex-1 min-h-0 overflow-y-auto p-4 scroll-smooth">
+    {/* Contenido del historial */}
+  </div>
+</div>
+```
+
+2. **Loading Indicator Mejorado:**
+```typescript
+{isLoading ? (
+  <div className="flex flex-col items-center justify-center py-12">
+    <div className="relative">
+      <div className="animate-spin rounded-full border-b-2 border-r-2"></div>
+      <div className="absolute animate-ping rounded-full border-2 opacity-20"></div>
+    </div>
+    <p className="mt-4 text-sm animate-pulse">Cargando historial...</p>
+  </div>
+) : /* contenido normal */}
+```
+
+3. **Loading Individual de Chats:**
+```typescript
+const [loadingChatId, setLoadingChatId] = useState<string | null>(null);
+
+// Overlay de carga por chat
+{loadingChatId === chat.id && (
+  <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+    <div className="animate-spin rounded-full border-b-2"></div>
+  </div>
+)}
+```
+
+4. **Beneficios:**
+- ✅ **Scroll fluido** con `scroll-smooth` y estructura flexbox correcta
+- ✅ **Loading mejorado** con animaciones duales (spin + ping)
+- ✅ **Feedback individual** cuando se selecciona un chat específico
+- ✅ **UX más responsive** con estados de carga claros
+
 ## Migración de Datos Existentes
 
 Si ya tienes imágenes generadas como base64 en tu base de datos, puedes crear un script de migración:
