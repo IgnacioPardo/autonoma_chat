@@ -8,12 +8,23 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Get chat with messages and attachments - only if shared
-    const chat = await prisma.chat.findFirst({
-      where: { 
-        id,
-        isShared: true // Only return chats that are explicitly shared
-      },
+    // Check if chat is shared using raw SQL
+    const result = await prisma.$queryRaw<Array<{ isShared: boolean }>>`
+      SELECT "isShared" FROM "chats" WHERE "id" = ${id}
+    `;
+
+    console.log("Share check result:", result);
+    
+    if (!result.length || !result[0]?.isShared) {
+      return NextResponse.json(
+        { error: "Chat not found or not shared" },
+        { status: 404 }
+      );
+    }
+
+    // Get chat with messages and attachments
+    const chat = await prisma.chat.findUnique({
+      where: { id },
       include: {
         messages: {
           orderBy: { position: "asc" },
@@ -26,7 +37,7 @@ export async function GET(
 
     if (!chat) {
       return NextResponse.json(
-        { error: "Chat not found or not shared" },
+        { error: "Chat not found" },
         { status: 404 }
       );
     }

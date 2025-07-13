@@ -29,21 +29,35 @@ export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBa
       return;
     }
 
-    const shareUrl = `${window.location.origin}/chat/${currentChatId}?shared=true`;
-    
     try {
+      // First, mark the chat as shared
+      const response = await fetch(`/api/chats/${currentChatId}/share`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isShared: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to share chat");
+      }
+
+      // Then copy the share link
+      const shareUrl = `${window.location.origin}/chat/${currentChatId}?shared=true`;
+      
       await navigator.clipboard.writeText(shareUrl);
-      toastUtils.success("Enlace de chat copiado al portapapeles");
+      toastUtils.success("Chat marcado como público y enlace copiado al portapapeles");
     } catch (error) {
-      console.error("Error copying share link:", error);
-      toastUtils.error("Error al copiar enlace");
+      console.error("Error sharing chat:", error);
+      toastUtils.error("Error al compartir chat");
     }
   };
 
   return (
     <nav className="animate-in fade-in fixed top-0 z-[60] flex w-full items-center bg-white p-4 shadow-md duration-300">
       {/* Left section */}
-      <div className="flex w-1/3 items-center">
+      <div className="flex w-1/3 items-center gap-2">
         <button
           onClick={onOpenSidebar}
           className="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-gray-100"
@@ -54,11 +68,6 @@ export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBa
             Historial
           </span>
         </button>
-      </div>
-
-      {/* Center section */}
-      <div className="flex w-1/3 justify-center items-center gap-4">
-        <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
         
         {/* Share button - only show when there's a chat */}
         {currentChatId && (
@@ -71,6 +80,11 @@ export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBa
             <span className="hidden text-xs text-gray-600 sm:inline">Compartir</span>
           </button>
         )}
+      </div>
+
+      {/* Center section */}
+      <div className="flex w-1/3 justify-center items-center">
+        <Image src="/autonoma_logo.png" alt="Logo" width={160} height={40} />
       </div>
 
       {/* Right section */}
