@@ -95,9 +95,6 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
                 <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                   {!isDevelopment && session && (
                     <>
-                      <div className="border-b border-gray-100 px-4 py-2 text-sm text-gray-700">
-                        {session.user?.email}
-                      </div>
                       <button
                         onClick={handleSignOut}
                         className="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
