@@ -85,7 +85,7 @@ function SignInContent() {
       
       <div className="relative z-10 bg-white/50 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4  p-2">
+          <div className="flex justify-center mb-4 p-2">
             <Image 
                 src="/autonoma_logo.png" 
                 alt="Autonoma Chat" 
