@@ -140,7 +140,7 @@ export default function ChatMessages({
     }
   };
   return (
-    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 overflow-x-hidden max-w-full">
+    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 overflow-x-hidden max-w-full scroll-smooth overflow-y-auto h-full min-h-0">
       {messages.map((message) => {
         const messageText = message.content;
         // Check if message has attachments (images)
