@@ -86,17 +86,17 @@ export default function VoiceSettings({ isOpen, onClose }: VoiceSettingsProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 bg-white/10 bg-opacity-10 backdrop-blur-sm flex items-center justify-center z-[100]">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center gap-2">
             <Settings size={20} className="text-primary-violet" />
             <h2 className="text-lg font-semibold text-gray-800">Configuración de Voz</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-200 rounded-lg transition-colors text-gray-500 hover:text-gray-700"
           >
             ✕
           </button>
@@ -168,7 +168,7 @@ export default function VoiceSettings({ isOpen, onClose }: VoiceSettingsProps) {
           <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
             >
               Cerrar
             </button>

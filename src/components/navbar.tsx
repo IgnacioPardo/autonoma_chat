@@ -22,7 +22,7 @@ export default function NavBar({ onOpenSidebar, isSaving }: NavBarProps) {
   };
 
   return (
-    <nav className="fixed top-0 z-50 flex w-full items-center bg-white p-8 shadow-md">
+    <nav className="fixed top-0 z-[60] flex w-full items-center bg-white p-8 shadow-md">
       {/* Left section */}
       <div className="flex items-center w-1/3">
         <button

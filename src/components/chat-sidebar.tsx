@@ -130,7 +130,7 @@ export default function ChatSidebar({
       {/* Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black opacity-10 backdrop-blur z-[45]"
           onClick={onClose}
         />
       )}
@@ -138,7 +138,7 @@ export default function ChatSidebar({
       {/* Sidebar */}
       <div className={`
         fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-sm 
-        shadow-xl border-r border-gray-200/50 z-50 transform transition-transform duration-300
+        shadow-xl border-r border-gray-200/50 z-[80] transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Header */}
