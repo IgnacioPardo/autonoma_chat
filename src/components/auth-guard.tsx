@@ -26,7 +26,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   // Show loading while checking session
   if (!isDevelopment && status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm opacity-30"></div>
         <div className="relative z-10">
           <LoadingIndicator isLoading={true} />
