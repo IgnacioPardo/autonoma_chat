@@ -79,27 +79,28 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+    <div className="min-h-screen flex items-center justify-center">
       {/* Background */}
-      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm opacity-30"></div>
+      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div>
       
-      <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
+      <div className="relative z-10 bg-white/50 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4 bg-white opacity-50 backdrop-blur-lg rounded-full p-2">
+          <div className="flex justify-center mb-4  p-2">
             <Image 
                 src="/autonoma_logo.png" 
                 alt="Autonoma Chat" 
-                width={80}
-                height={20}
+                width={240}
+                height={40}
                 className="mx-auto mb-4"
             />
         </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          {/* <h1 className="text-2xl font-bold text-white mb-2">
             Bienvenido a Autonoma Chat
           </h1>
-          <p className="text-gray-300">
+          */}
+          <p className="text-gray-900">
             Inicia sesión para continuar
-          </p>
+          </p> 
         </div>
 
         {error && (
@@ -127,7 +128,7 @@ function SignInContent() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
-            Solo usuarios registrados pueden acceder a Autonoma Chat
+            Solo usuarios registrados pueden acceder
           </p>
         </div>
       </div>
