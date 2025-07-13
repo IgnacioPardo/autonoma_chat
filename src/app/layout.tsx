@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-const _geist = Geist({
+const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
 });
@@ -24,7 +24,7 @@ const _geist = Geist({
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen w-full flex flex-col items-center justify-center relative">
+      <body className={`min-h-screen w-full flex flex-col items-center justify-center relative ${geist.variable}`}>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

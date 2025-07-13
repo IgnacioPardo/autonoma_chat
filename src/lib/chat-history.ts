@@ -1,15 +1,5 @@
 import type { Message, Attachment as AIAttachment } from 'ai'
 
-interface ImageGenerationResult {
-  success: boolean;
-  imageUrl: string;
-  prompt?: string;
-}
-
-interface ImageGenerationArgs {
-  prompt?: string;
-}
-
 // Extended attachment interface that includes cloudinaryPublicId
 interface ExtendedAttachment extends AIAttachment {
   cloudinaryPublicId?: string;

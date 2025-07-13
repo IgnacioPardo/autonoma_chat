@@ -284,14 +284,14 @@ export default function ChatMessages({
                               const isBase64 = result.imageUrl.startsWith('data:');
                               
                               return (
-                                <div key={index} className="rounded-xl overflow-visible border-2 border-gray-200 shadow-lg bg-white relative z-10">
+                                <div key={index} className="rounded-xl overflow-visible border-2 border-gray-200 shadow-lg bg-white relative z-10 animate-in fade-in duration-500">
                                   <div className="relative z-10">
                                     <Image
                                       src={result.imageUrl}
                                       alt={result.prompt ?? 'Generated image'}
                                       width={1024}
                                       height={1024}
-                                      className="w-full h-auto object-cover rounded-t-lg"
+                                      className="w-full h-auto object-cover rounded-t-lg transition-all duration-300"
                                       unoptimized={isBase64} // Only unoptimized for base64, let Next.js optimize Cloudinary URLs
                                     />
                                   </div>
@@ -329,7 +329,7 @@ export default function ChatMessages({
                             // Show loading state for image generation
                             const args = toolInvocation.args as ImageGenerationArgs;
                             return (
-                              <div key={index} className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 relative z-10">
+                              <div key={index} className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 relative z-10 animate-in fade-in duration-300">
                                 <div className="flex items-center gap-3">
                                   <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                                   <div className="text-sm text-blue-700">
@@ -480,13 +480,9 @@ export default function ChatMessages({
     
     const lastMessage = messages[messages.length - 1];
     
-    // If last message is from assistant and has content, streaming has started
-    if (lastMessage?.role === 'assistant' && lastMessage?.content.trim()) {
-      return true;
-    }
-    
-    // If last message has tool invocations (image generation in progress)
-    if (lastMessage?.toolInvocations && lastMessage?.toolInvocations.length > 0) {
+    // If last message is from assistant, assume streaming has started
+    // This includes empty messages that are about to receive content or tool invocations
+    if (lastMessage?.role === 'assistant') {
       return true;
     }
     
