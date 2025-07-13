@@ -1,4 +1,4 @@
-import { Send, ImagePlus, X, FileText, BarChart3, File } from "lucide-react";
+import { Send, ImagePlus, X, FileText, BarChart3, File, AudioLines } from "lucide-react";
 import Image from "next/image";
 import type { Message, Attachment } from "ai";
 import { useRef } from "react";
@@ -307,11 +307,14 @@ export default function ChatInput({
               <button
                 type="button"
                 onClick={() => (window.location.href = "/voice-chat")}
-                className="mini-orb animate-in fade-in absolute left-1 z-10 flex h-10 w-10 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-4xl border-2 border-purple-400 bg-gradient-to-br from-purple-500 to-blue-500 pl-5 group-hover/mini-orb:h-12 group-hover/mini-orb:w-1/2 group-hover/mini-orb:rounded-lg group-hover/mini-orb:border-0 hover:from-purple-600 hover:to-blue-600 hover:shadow-xl"
+                className="mini-orb animate-in fade-in absolute left-1 z-10 flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-4xl border-2 border-purple-400 bg-gradient-to-br from-purple-500 to-blue-500 group-hover/mini-orb:h-12 group-hover/mini-orb:w-2/3 group-hover/mini-orb:justify-start group-hover/mini-orb:pl-5 group-hover/mini-orb:rounded-lg group-hover/mini-orb:border-0 hover:from-purple-600 hover:to-blue-600 hover:shadow-xl"
                 title="Voice Chat"
                 style={{ transition: "all 0.4s cubic-bezier(0.4,0,0.2,1)" }}
               >
-                {/* <AudioLines size={20} className="text-white" /> */}
+                <AudioLines 
+                  size={18} 
+                  className="text-white shrink-0 transition-all duration-300 group-hover/mini-orb:mr-2" 
+                />
                 <span
                   className="text-md group-hover/mini-orb:animate-in group-hover/mini-orb:fade-in group-hover/mini-orb:slide-in-right max-w-0 whitespace-nowrap text-white opacity-0 transition-all duration-300 group-hover/mini-orb:max-w-xs group-hover/mini-orb:opacity-100"
                   style={{ transition: "max-width 0.3s, opacity 0.3s" }}
