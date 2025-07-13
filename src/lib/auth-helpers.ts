@@ -8,7 +8,7 @@ export async function getCurrentUser() {
 
 export async function requireAuth() {
   const user = await getCurrentUser();
-  
+
   // In development, create a fake user if none exists
   if (process.env.NODE_ENV === "development" && !user) {
     return {
@@ -17,10 +17,15 @@ export async function requireAuth() {
       email: "dev@example.com",
     };
   }
-  
-  if (!user || !('id' in user)) {
+
+  if (!user || !("id" in user)) {
     throw new Error("Authentication required");
   }
-  
-  return user as { id: string; name?: string | null; email?: string | null; image?: string | null };
+
+  return user as {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
 }

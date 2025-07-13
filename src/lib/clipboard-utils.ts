@@ -2,7 +2,7 @@
  * Utility functions for clipboard and sharing operations
  */
 
-import { toastUtils } from './toast-utils';
+import { toastUtils } from "./toast-utils";
 
 /**
  * Copies text to clipboard with error handling
@@ -10,10 +10,10 @@ import { toastUtils } from './toast-utils';
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-    toastUtils.success('Copiado al portapapeles');
+    toastUtils.success("Copiado al portapapeles");
   } catch (err) {
     console.error("Error copying text: ", err);
-    toastUtils.error('Error al copiar al portapapeles');
+    toastUtils.error("Error al copiar al portapapeles");
   }
 }
 
@@ -27,13 +27,13 @@ export async function shareText(text: string): Promise<void> {
         title: "Mensaje de Autonoma Chat",
         text: text,
       });
-      toastUtils.success('Compartido correctamente');
+      toastUtils.success("Compartido correctamente");
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         return; // User cancelled sharing
       }
       console.error("Error sharing: ", err);
-      toastUtils.error('Error al compartir, copiando al portapapeles...');
+      toastUtils.error("Error al compartir, copiando al portapapeles...");
       // Fallback: copy to clipboard
       await copyToClipboard(text);
     }

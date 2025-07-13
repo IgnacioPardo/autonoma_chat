@@ -34,16 +34,22 @@ interface SpeechRecognition extends EventTarget {
   lang: string;
   maxAlternatives: number;
   serviceURI: string;
-  
+
   start(): void;
   stop(): void;
   abort(): void;
-  
+
   onstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
   onend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => unknown) | null;
-  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown) | null;
-  onnomatch: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown) | null;
+  onerror:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => unknown)
+    | null;
+  onresult:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown)
+    | null;
+  onnomatch:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown)
+    | null;
   onsoundstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
   onsoundend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
   onspeechstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;

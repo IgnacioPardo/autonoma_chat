@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from 'react';
-import Image from 'next/image';
-import { ImagePlus, X } from 'lucide-react';
+import React, { useRef } from "react";
+import Image from "next/image";
+import { ImagePlus, X } from "lucide-react";
 
 interface ImageUploadProps {
   onImageAdd: (file: File) => void;
@@ -10,18 +10,22 @@ interface ImageUploadProps {
   onImageRemove: (index: number) => void;
 }
 
-export default function ImageUpload({ onImageAdd, images, onImageRemove }: ImageUploadProps) {
+export default function ImageUpload({
+  onImageAdd,
+  images,
+  onImageRemove,
+}: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file?.type.startsWith('image/')) {
+    if (file?.type.startsWith("image/")) {
       onImageAdd(file);
-      console.log('Image added:', file.name, file.type);
+      console.log("Image added:", file.name, file.type);
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -39,23 +43,23 @@ export default function ImageUpload({ onImageAdd, images, onImageRemove }: Image
         onChange={handleFileSelect}
         className="hidden"
       />
-      
+
       {/* Image previews */}
       {images.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="mb-3 flex flex-wrap gap-2">
           {images.map((image, index) => (
-            <div key={index} className="relative group">
+            <div key={index} className="group relative">
               <Image
                 src={URL.createObjectURL(image)}
                 alt={`Preview ${index + 1}`}
                 width={80}
                 height={80}
-                className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                className="h-20 w-20 rounded-lg border border-gray-300 object-cover"
                 unoptimized // Necesario para URLs de blob
               />
               <button
                 onClick={() => onImageRemove(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                className="absolute -top-2 -right-2 cursor-pointer rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                 title="Eliminar imagen"
               >
                 <X size={12} />
@@ -64,12 +68,12 @@ export default function ImageUpload({ onImageAdd, images, onImageRemove }: Image
           ))}
         </div>
       )}
-      
+
       {/* Upload button */}
       <button
         type="button"
         onClick={handleButtonClick}
-        className="mb-2 p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 bg-white/90 cursor-pointer"
+        className="text-primary-violet mb-2 cursor-pointer rounded-lg border border-gray-300 bg-white/90 p-2 transition-colors hover:bg-gray-100"
         title="Agregar imagen"
       >
         <ImagePlus size={18} />

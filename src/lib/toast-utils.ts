@@ -1,4 +1,4 @@
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 export const toastUtils = {
   success: (message: string) => {
@@ -8,9 +8,9 @@ export const toastUtils = {
   error: (message: string, error?: unknown) => {
     // Log the actual error for debugging
     if (error) {
-      console.error('Error details:', error);
+      console.error("Error details:", error);
     }
-    
+
     // Show user-friendly error message
     toast.error(message);
   },
@@ -21,7 +21,7 @@ export const toastUtils = {
       loading: string;
       success: string;
       error: string;
-    }
+    },
   ) => {
     return toast.promise(promise, messages);
   },
@@ -35,18 +35,18 @@ export const toastUtils = {
   },
 
   // API Error handler
-  apiError: (error: unknown, fallbackMessage = 'Algo salió mal') => {
+  apiError: (error: unknown, fallbackMessage = "Algo salió mal") => {
     let message = fallbackMessage;
-    
+
     if (error instanceof Error) {
       message = error.message;
-    } else if (typeof error === 'string') {
+    } else if (typeof error === "string") {
       message = error;
-    } else if (error && typeof error === 'object' && 'message' in error) {
+    } else if (error && typeof error === "object" && "message" in error) {
       message = String(error.message);
     }
-    
-    console.error('API Error:', error);
+
+    console.error("API Error:", error);
     toast.error(message);
   },
 };

@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary } from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -20,7 +20,7 @@ interface CloudinaryUploadResponse {
   public_id: string;
 }
 
-// Interface for Cloudinary destroy response  
+// Interface for Cloudinary destroy response
 interface CloudinaryDestroyResponse {
   result: string;
 }
@@ -30,31 +30,31 @@ interface CloudinaryDestroyResponse {
  */
 export async function uploadImageToCloudinary(
   base64Data: string,
-  filename?: string
+  filename?: string,
 ): Promise<CloudinaryUploadResult> {
   try {
-    console.log('☁️ Starting Cloudinary upload process...');
-    
+    console.log("☁️ Starting Cloudinary upload process...");
+
     // Add data:image/png;base64, prefix if not present
-    const dataUrl = base64Data.startsWith('data:') 
-      ? base64Data 
+    const dataUrl = base64Data.startsWith("data:")
+      ? base64Data
       : `data:image/png;base64,${base64Data}`;
 
-    console.log('📤 Uploading to Cloudinary with options...');
+    console.log("📤 Uploading to Cloudinary with options...");
     const uploadStartTime = Date.now();
-    
-    const uploadResult = await cloudinary.uploader.upload(dataUrl, {
-      folder: 'autonoma-chat/generated-images',
+
+    const uploadResult = (await cloudinary.uploader.upload(dataUrl, {
+      folder: "autonoma-chat/generated-images",
       public_id: filename ? `generated-${filename}-${Date.now()}` : undefined,
-      resource_type: 'image',
-      format: 'png',
-      quality: 'auto:good',
+      resource_type: "image",
+      format: "png",
+      quality: "auto:good",
       timeout: 40000, // 40 second timeout for upload
-    }) as CloudinaryUploadResponse;
+    })) as CloudinaryUploadResponse;
 
     const uploadTime = Date.now() - uploadStartTime;
     console.log(`✅ Cloudinary upload successful in ${uploadTime}ms`);
-    console.log('📷 Image URL:', uploadResult.secure_url);
+    console.log("📷 Image URL:", uploadResult.secure_url);
 
     return {
       success: true,
@@ -62,15 +62,15 @@ export async function uploadImageToCloudinary(
       public_id: uploadResult.public_id,
     };
   } catch (error) {
-    console.error('💥 Cloudinary upload error:', error);
-    console.error('Upload error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
+    console.error("💥 Cloudinary upload error:", error);
+    console.error("Upload error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
-      type: typeof error
+      type: typeof error,
     });
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to upload image',
+      error: error instanceof Error ? error.message : "Failed to upload image",
     };
   }
 }
@@ -81,16 +81,16 @@ export async function uploadImageToCloudinary(
 export async function uploadBufferToCloudinary(
   buffer: Buffer,
   filename?: string,
-  contentType = 'image/png'
+  contentType = "image/png",
 ): Promise<CloudinaryUploadResult> {
   try {
-    const base64Data = `data:${contentType};base64,${buffer.toString('base64')}`;
+    const base64Data = `data:${contentType};base64,${buffer.toString("base64")}`;
     return await uploadImageToCloudinary(base64Data, filename);
   } catch (error) {
-    console.error('Error uploading buffer to Cloudinary:', error);
+    console.error("Error uploading buffer to Cloudinary:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to upload buffer',
+      error: error instanceof Error ? error.message : "Failed to upload buffer",
     };
   }
 }
@@ -99,19 +99,21 @@ export async function uploadBufferToCloudinary(
  * Delete an image from Cloudinary
  */
 export async function deleteImageFromCloudinary(
-  publicId: string
+  publicId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await cloudinary.uploader.destroy(publicId) as CloudinaryDestroyResponse;
+    const result = (await cloudinary.uploader.destroy(
+      publicId,
+    )) as CloudinaryDestroyResponse;
     return {
-      success: result.result === 'ok',
-      error: result.result !== 'ok' ? 'Failed to delete image' : undefined,
+      success: result.result === "ok",
+      error: result.result !== "ok" ? "Failed to delete image" : undefined,
     };
   } catch (error) {
-    console.error('Error deleting from Cloudinary:', error);
+    console.error("Error deleting from Cloudinary:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete image',
+      error: error instanceof Error ? error.message : "Failed to delete image",
     };
   }
 }

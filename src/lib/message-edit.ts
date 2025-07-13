@@ -1,4 +1,4 @@
-import type { Message } from 'ai';
+import type { Message } from "ai";
 
 export interface MessageEditOptions {
   currentChatId: string | null;
@@ -20,16 +20,16 @@ export async function saveEditedMessage(
   messageId: string,
   editText: string,
   messages: Message[],
-  options: MessageEditOptions
+  options: MessageEditOptions,
 ): Promise<void> {
-  const { 
-    setMessages, 
-    setEditingMessageId, 
-    setEditText, 
+  const {
+    setMessages,
+    setEditingMessageId,
+    setEditText,
     reload,
     setSidebarRefreshTrigger,
     setIsSaving,
-    setCurrentChatId
+    setCurrentChatId,
   } = options;
 
   if (!editText.trim()) {
@@ -42,7 +42,7 @@ export async function saveEditedMessage(
 
   try {
     // Find the index of the edited message
-    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
     if (messageIndex === -1) {
       setIsSaving(false);
       return;
@@ -58,17 +58,16 @@ export async function saveEditedMessage(
       id: crypto.randomUUID(), // NEW: Generate new ID to prevent conflicts
       role: originalMessage.role,
       content: editText,
-      createdAt: new Date() // NEW: Use current time for new branch
+      createdAt: new Date(), // NEW: Use current time for new branch
     };
 
     // Create new messages array: all messages up to (but not including) the edited one, plus the edited message
     const messagesBeforeEdit = messages.slice(0, messageIndex);
     const newMessages = [...messagesBeforeEdit, editedMessage];
-    
-    
+
     // Update the messages state first
     setMessages(newMessages);
-    
+
     // Clear editing state
     setEditingMessageId(null);
     setEditText("");
@@ -76,14 +75,14 @@ export async function saveEditedMessage(
     setCurrentChatId(null); // Reset current chat ID to create a new branch
 
     // Refresh sidebar to show the new chat
-    setSidebarRefreshTrigger(prev => prev + 1);
+    setSidebarRefreshTrigger((prev) => prev + 1);
 
     // If this was a user message, trigger regeneration
-    if (originalMessage.role === 'user') {
-    //   console.log('Triggering regeneration for user message edit in new chat:', savedChat.id);
-    //   console.log('CRITICAL: About to call reload() - the response should save to chat:', savedChat.id);
-    //   console.log('Make sure currentChatIdRef.current is updated before onFinish triggers');
-      
+    if (originalMessage.role === "user") {
+      //   console.log('Triggering regeneration for user message edit in new chat:', savedChat.id);
+      //   console.log('CRITICAL: About to call reload() - the response should save to chat:', savedChat.id);
+      //   console.log('Make sure currentChatIdRef.current is updated before onFinish triggers');
+
       // Use a longer timeout to ensure the currentChatId state has updated in the useChat hook
       setTimeout(() => {
         // console.log('Calling reload() NOW - checking final state:');
@@ -92,7 +91,6 @@ export async function saveEditedMessage(
         void reload();
       }, 500); // Increased timeout even more
     }
-
   } catch {
     // console.error('Error saving edited message:', error);
     // Don't create a fallback chat on error - just show the error

@@ -11,36 +11,34 @@ export default function SignOutPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       {/* Background */}
-      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div>
-      
-      <div className="relative z-10 bg-white/50 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4 p-2">
-            <Image 
-                src="/autonoma_logo.png" 
-                alt="Autonoma Chat" 
-                width={240}
-                height={40}
-                className="mx-auto mb-4"
+      <div className="fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-sm"></div>
+
+      <div className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-white/20 bg-white/50 p-8 backdrop-blur-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center p-2">
+            <Image
+              src="/autonoma_logo.png"
+              alt="Autonoma Chat"
+              width={240}
+              height={40}
+              className="mx-auto mb-4"
             />
           </div>
-          <p className="text-gray-900">
-            Cerrando sesión...
-          </p> 
+          <p className="text-gray-900">Cerrando sesión...</p>
         </div>
 
         <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20">
-              <LogOut className="w-8 h-8 text-red-600" />
+          <div className="mb-4 flex justify-center">
+            <div className="rounded-full border border-red-500/20 bg-red-500/10 p-4">
+              <LogOut className="h-8 w-8 text-red-600" />
             </div>
           </div>
-          
+
           <div className="space-y-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto"></div>
-            <p className="text-gray-700 text-sm">
+            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-b-2 border-red-600"></div>
+            <p className="text-sm text-gray-700">
               Serás redirigido automáticamente...
             </p>
           </div>

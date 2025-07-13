@@ -1,60 +1,59 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { prisma } from '~/lib/prisma'
-import type { MessageWithAttachments } from '~/types/messages'
-import { requireAuth } from '~/lib/auth-helpers'
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { prisma } from "~/lib/prisma";
+import type { MessageWithAttachments } from "~/types/messages";
+import { requireAuth } from "~/lib/auth-helpers";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await requireAuth()
-    const { id } = await params
-    
+    const user = await requireAuth();
+    const { id } = await params;
+
     const chat = await prisma.chat.findFirst({
-      where: { 
+      where: {
         id,
-        userId: user.id 
+        userId: user.id,
       },
       include: {
         messages: {
           include: {
-            attachments: true
+            attachments: true,
           },
           orderBy: {
-            createdAt: 'asc'
-          }
-        }
-      }
-    })
+            createdAt: "asc",
+          },
+        },
+      },
+    });
 
     if (!chat) {
-      return NextResponse.json(
-        { error: 'Chat not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    return NextResponse.json(chat)
+    return NextResponse.json(chat);
   } catch (error) {
-    console.error('Error fetching chat:', error)
+    console.error("Error fetching chat:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch chat' },
-      { status: 500 }
-    )
+      { error: "Failed to fetch chat" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAuth() // Verify authentication but don't need user variable
-    const { id } = await params
-    const body = await request.json() as { messages: MessageWithAttachments[] }
-    const { messages } = body
+    await requireAuth(); // Verify authentication but don't need user variable
+    const { id } = await params;
+    const body = (await request.json()) as {
+      messages: MessageWithAttachments[];
+    };
+    const { messages } = body;
 
     // console.log('PUT endpoint - Chat ID:', id);
     // console.log('PUT endpoint - Received messages:', messages);
@@ -68,144 +67,153 @@ export async function PUT(
     // })));
 
     // Filter out invalid messages but allow messages with attachments even if content is empty
-    const validMessages = messages.filter((message: MessageWithAttachments): message is MessageWithAttachments => 
-      Boolean(message) &&
-      typeof message.content === 'string' &&
-      (message.content.trim().length > 0 || Boolean(message.attachments && message.attachments.length > 0)) &&
-      Boolean(message.role) &&
-      (message.role === 'user' || message.role === 'assistant')
+    const validMessages = messages.filter(
+      (message: MessageWithAttachments): message is MessageWithAttachments =>
+        Boolean(message) &&
+        typeof message.content === "string" &&
+        (message.content.trim().length > 0 ||
+          Boolean(message.attachments && message.attachments.length > 0)) &&
+        Boolean(message.role) &&
+        (message.role === "user" || message.role === "assistant"),
     );
 
     if (validMessages.length === 0) {
       return NextResponse.json(
-        { error: 'No valid messages provided' },
-        { status: 400 }
+        { error: "No valid messages provided" },
+        { status: 400 },
       );
     }
 
     // Delete existing messages and their attachments (cascade will handle attachments)
     await prisma.message.deleteMany({
-      where: { chatId: id }
-    })
+      where: { chatId: id },
+    });
 
-    console.log('PUT endpoint - Deleted existing messages for chat:', id);
+    console.log("PUT endpoint - Deleted existing messages for chat:", id);
 
-    const messagesToCreate = validMessages.map((message: MessageWithAttachments, index: number) => ({
-      role: message.role,
-      content: message.content.trim(),
-      position: message.position ?? index,
-      attachments: message.attachments ? {
-        create: message.attachments.map(att => ({
-          name: att.name,
-          contentType: att.contentType,
-          url: att.url,
-          size: att.size
-        }))
-      } : undefined
-    }));
+    const messagesToCreate = validMessages.map(
+      (message: MessageWithAttachments, index: number) => ({
+        role: message.role,
+        content: message.content.trim(),
+        position: message.position ?? index,
+        attachments: message.attachments
+          ? {
+              create: message.attachments.map((att) => ({
+                name: att.name,
+                contentType: att.contentType,
+                url: att.url,
+                size: att.size,
+              })),
+            }
+          : undefined,
+      }),
+    );
 
-    console.log('PUT endpoint - Messages to create in DB:', messagesToCreate.map((m, i: number) => ({
-      dbIndex: i,
-      role: m.role,
-      content: m.content.substring(0, 30) + '...',
-      position: m.position,
-      hasAttachments: Boolean(m.attachments)
-    })));
+    console.log(
+      "PUT endpoint - Messages to create in DB:",
+      messagesToCreate.map((m, i: number) => ({
+        dbIndex: i,
+        role: m.role,
+        content: m.content.substring(0, 30) + "...",
+        position: m.position,
+        hasAttachments: Boolean(m.attachments),
+      })),
+    );
 
     const chat = await prisma.chat.update({
       where: { id },
       data: {
         messages: {
-          create: messagesToCreate
+          create: messagesToCreate,
         },
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       include: {
         messages: {
           include: {
-            attachments: true
+            attachments: true,
           },
           orderBy: {
-            createdAt: 'asc' // Use createdAt instead of position for now
-          }
-        }
-      }
-    })
-
-    console.log('PUT endpoint - Updated chat successfully with messages');
-    console.log('Updated chat result:', {
-      id: chat.id,
-      messageCount: chat.messages.length,
-      messagesWithAttachments: chat.messages.map(m => ({
-        id: m.id,
-        role: m.role,
-        attachmentCount: m.attachments?.length ?? 0
-      }))
+            createdAt: "asc", // Use createdAt instead of position for now
+          },
+        },
+      },
     });
 
-    return NextResponse.json(chat)
+    console.log("PUT endpoint - Updated chat successfully with messages");
+    console.log("Updated chat result:", {
+      id: chat.id,
+      messageCount: chat.messages.length,
+      messagesWithAttachments: chat.messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        attachmentCount: m.attachments?.length ?? 0,
+      })),
+    });
+
+    return NextResponse.json(chat);
   } catch (error) {
-    console.error('Error updating chat:', error)
+    console.error("Error updating chat:", error);
     return NextResponse.json(
-      { error: 'Failed to update chat' },
-      { status: 500 }
-    )
+      { error: "Failed to update chat" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params
-    const body = await request.json() as { title: string }
-    const { title } = body
+    const { id } = await params;
+    const body = (await request.json()) as { title: string };
+    const { title } = body;
 
     const chat = await prisma.chat.update({
       where: { id },
       data: {
         title,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       include: {
         messages: {
           include: {
-            attachments: true
+            attachments: true,
           },
           orderBy: {
-            createdAt: 'asc'
-          }
-        }
-      }
-    })
+            createdAt: "asc",
+          },
+        },
+      },
+    });
 
-    return NextResponse.json(chat)
+    return NextResponse.json(chat);
   } catch (error) {
-    console.error('Error updating chat title:', error)
+    console.error("Error updating chat title:", error);
     return NextResponse.json(
-      { error: 'Failed to update chat title' },
-      { status: 500 }
-    )
+      { error: "Failed to update chat title" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params
+    const { id } = await params;
     await prisma.chat.delete({
-      where: { id }
-    })
+      where: { id },
+    });
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting chat:', error)
+    console.error("Error deleting chat:", error);
     return NextResponse.json(
-      { error: 'Failed to delete chat' },
-      { status: 500 }
-    )
+      { error: "Failed to delete chat" },
+      { status: 500 },
+    );
   }
 }

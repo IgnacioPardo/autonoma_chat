@@ -4,12 +4,15 @@ import { Providers } from "~/components/providers";
 import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
-
+export default function ClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SessionProvider>
       {/* Fondo fijo, fuera del área animada */}
-      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div>
+      <div className="fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-sm"></div>
       {/* Contenido principal animado */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -18,7 +21,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.35, ease: "easeInOut" }}
-          className="relative z-10 w-full flex flex-col items-center justify-center"
+          className="relative z-10 flex w-full flex-col items-center justify-center"
         >
           <Providers>
             {/* Aquí podrías renderizar el sidebar si lo necesitas, usando sidebarOpen y handleCloseSidebar */}
@@ -31,21 +34,21 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         toastOptions={{
           duration: 5000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: "#363636",
+            color: "#fff",
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#ffffff',
+              primary: "#10b981",
+              secondary: "#ffffff",
             },
           },
           error: {
             duration: 8000,
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#ffffff',
+              primary: "#ef4444",
+              secondary: "#ffffff",
             },
           },
         }}

@@ -21,10 +21,14 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body className={`min-h-screen w-full flex flex-col items-center justify-center relative ${geist.variable}`}>
+      <body
+        className={`relative flex min-h-screen w-full flex-col items-center justify-center ${geist.variable}`}
+      >
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

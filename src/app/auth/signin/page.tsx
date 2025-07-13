@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 // Google Icon Component
 function GoogleIcon() {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24">
+    <svg className="h-5 w-5" viewBox="0 0 24 24">
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -39,7 +39,9 @@ interface Provider {
 }
 
 function SignInContent() {
-  const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
+  const [providers, setProviders] = useState<Record<string, Provider> | null>(
+    null,
+  );
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -79,33 +81,31 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       {/* Background */}
-      <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div>
-      
-      <div className="relative z-10 bg-white/50 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4 p-2">
-            <Image 
-                src="/autonoma_logo.png" 
-                alt="Autonoma Chat" 
-                width={240}
-                height={40}
-                className="mx-auto mb-4"
+      <div className="fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-sm"></div>
+
+      <div className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-white/20 bg-white/50 p-8 backdrop-blur-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center p-2">
+            <Image
+              src="/autonoma_logo.png"
+              alt="Autonoma Chat"
+              width={240}
+              height={40}
+              className="mx-auto mb-4"
             />
-        </div>
+          </div>
           {/* <h1 className="text-2xl font-bold text-white mb-2">
             Bienvenido a Autonoma Chat
           </h1>
           */}
-          <p className="text-gray-900">
-            Inicia sesión para continuar
-          </p> 
+          <p className="text-gray-900">Inicia sesión para continuar</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-red-300 text-sm text-center">
+          <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+            <p className="text-center text-sm text-red-300">
               {getErrorMessage(error)}
             </p>
           </div>
@@ -117,9 +117,9 @@ function SignInContent() {
               <button
                 key={provider.name}
                 onClick={() => signIn(provider.id, { callbackUrl: "/" })}
-                className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors duration-200 border border-gray-600 cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border border-gray-600 bg-gray-800 px-4 py-3 text-white transition-colors duration-200 hover:bg-gray-700"
               >
-                {provider.name === "GitHub" && <Github className="w-5 h-5" />}
+                {provider.name === "GitHub" && <Github className="h-5 w-5" />}
                 {provider.name === "Google" && <GoogleIcon />}
                 Continuar con {provider.name}
               </button>
@@ -138,16 +138,18 @@ function SignInContent() {
 
 export default function SignIn() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 border border-white/20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-            <p className="text-white mt-4">Cargando...</p>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+          <div className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 backdrop-blur-md">
+            <div className="text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
+              <p className="mt-4 text-white">Cargando...</p>
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <SignInContent />
     </Suspense>
   );

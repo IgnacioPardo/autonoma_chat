@@ -26,14 +26,17 @@ export const authOptions: NextAuthOptions = {
     }),
     redirect: ({ url, baseUrl }) => {
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
     signIn: async ({ user, account }) => {
       try {
-        console.log("SignIn callback:", { user: user.email, account: account?.provider });
+        console.log("SignIn callback:", {
+          user: user.email,
+          account: account?.provider,
+        });
         return true;
       } catch (error) {
         console.error("SignIn error:", error);
@@ -51,7 +54,11 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
   events: {
     async signIn({ user, account, isNewUser }) {
-      console.log("User signed in:", { email: user.email, isNewUser, provider: account?.provider });
+      console.log("User signed in:", {
+        email: user.email,
+        isNewUser,
+        provider: account?.provider,
+      });
     },
     async signOut({ session }) {
       console.log("User signed out:", { email: session?.user?.email });

@@ -4,11 +4,23 @@ export interface Attachment {
   contentType: string;
   cloudinaryPublicId?: string;
   size?: number;
-  fileType?: 'image' | 'csv' | 'markdown' | 'pdf' | 'json' | 'yaml' | 'xml' | 'txt' | 'code' | 'config' | 'log' | 'other';
+  fileType?:
+    | "image"
+    | "csv"
+    | "markdown"
+    | "pdf"
+    | "json"
+    | "yaml"
+    | "xml"
+    | "txt"
+    | "code"
+    | "config"
+    | "log"
+    | "other";
 }
 
 export interface MessageWithAttachments {
   content: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   experimental_attachments?: Attachment[];
 }

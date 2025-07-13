@@ -1,23 +1,22 @@
-
 "use client";
 import React from "react";
 
 // import { useState } from 'react';
 import { ElevenLabsChat } from "~/components/elevenlabs-chat";
 import AuthGuard from "~/components/auth-guard";
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function VoiceChatPage() {
-    //   const [transcript, setTranscript] = useState<string>('');
-    //   const handleVoiceTranscript = (newTranscript: string) => {
-    //     setTranscript(newTranscript);
-    //     console.log('Voice transcript received:', newTranscript);
-    //   };
+  //   const [transcript, setTranscript] = useState<string>('');
+  //   const handleVoiceTranscript = (newTranscript: string) => {
+  //     setTranscript(newTranscript);
+  //     console.log('Voice transcript received:', newTranscript);
+  //   };
 
   // Animación JS para el filtro SVG
   React.useEffect(() => {
-    const turb = document.getElementById('turb');
+    const turb = document.getElementById("turb");
     let frame = 0;
     let running = true;
     function animate() {
@@ -25,47 +24,67 @@ export default function VoiceChatPage() {
       // Oscilación senoidal entre 0.008 y 0.02
       const freqX = 0.008 + Math.sin(frame * 0.04) * 0.008;
       const freqY = 0.018 + Math.cos(frame * 0.03) * 0.008;
-      turb.setAttribute('baseFrequency', `${freqX.toFixed(4)} ${freqY.toFixed(4)}`);
+      turb.setAttribute(
+        "baseFrequency",
+        `${freqX.toFixed(4)} ${freqY.toFixed(4)}`,
+      );
       frame++;
       if (running) requestAnimationFrame(animate);
     }
     animate();
-    return () => { running = false; };
+    return () => {
+      running = false;
+    };
   }, []);
   return (
     <AuthGuard>
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         {/* background */}
         {/* SVG filter para distorsión senoidal */}
-        <svg className="absolute w-0 h-0">
+        <svg className="absolute h-0 w-0">
           <filter id="wave">
-            <feTurbulence id="turb" type="turbulence" baseFrequency="0.01 0.02" numOctaves="2" result="turb" seed="2"/>
-            <feDisplacementMap in2="turb" in="SourceGraphic" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+            <feTurbulence
+              id="turb"
+              type="turbulence"
+              baseFrequency="0.01 0.02"
+              numOctaves="2"
+              result="turb"
+              seed="2"
+            />
+            <feDisplacementMap
+              in2="turb"
+              in="SourceGraphic"
+              scale="30"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
           </filter>
         </svg>
-        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-lg animate-wave" style={{ filter: 'url(#wave)', mixBlendMode: 'color' }}></div>
+        <div
+          className="animate-wave fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-lg"
+          style={{ filter: "url(#wave)", mixBlendMode: "color" }}
+        ></div>
         {/* <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-1 scale-120 blur-lg animate-wave opacity-30 rotate-180" style={{ filter: 'url(#wave)', mixBlendMode: 'color' }}></div> */}
-        
+
         {/* NavBar */}
         {/* <NavBar 
           onOpenSidebar={() => {}} // No sidebar on this page
           isSaving={false}
         /> */}
 
-        <main className="flex min-h-screen w-full sm:w-4/5 md:w-2/3 max-w-4xl flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe relative z-10">
-          
+        <main className="pb-safe relative z-10 flex min-h-screen w-full max-w-4xl flex-col items-center justify-start overflow-x-hidden overflow-y-auto sm:w-4/5 md:w-2/3">
           {/* Header */}
           <div className="w-full pt-8 pb-6">
-            <div className="flex items-center justify-between mb-6">
-              <Link 
+            <div className="mb-6 flex items-center justify-between">
+              <Link
                 href="/"
-                className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="inline-flex items-center space-x-2 text-gray-600 transition-colors hover:text-gray-800"
               >
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Chat</span>
               </Link>
             </div>
-            
+
             {/* <div className="text-center">
               <div className="flex items-center justify-center space-x-3 mb-4">
                 <div className="p-3 bg-purple-100 rounded-full">
@@ -85,10 +104,10 @@ export default function VoiceChatPage() {
           </div>
 
           {/* Voice Chat Interface */}
-          <div className="w-full max-w-md mx-auto">
-            <div className="bg-white/50 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 aspect-[3/4] flex flex-col">
+          <div className="mx-auto w-full max-w-md">
+            <div className="flex aspect-[3/4] flex-col rounded-2xl border border-gray-200 bg-white/50 shadow-xl backdrop-blur-md">
               <ElevenLabsChat
-                // onTranscript={handleVoiceTranscript}
+              // onTranscript={handleVoiceTranscript}
               />
             </div>
           </div>
@@ -157,7 +176,6 @@ export default function VoiceChatPage() {
               </ul>
             </div>
           </div> */}
-
         </main>
       </div>
     </AuthGuard>

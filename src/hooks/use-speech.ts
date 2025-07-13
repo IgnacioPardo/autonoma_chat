@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { getCurrentVoice } from '../components/voice-settings';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { getCurrentVoice } from "../components/voice-settings";
 
 interface UseSpeechReturn {
   // Speech-to-Text
@@ -8,7 +8,7 @@ interface UseSpeechReturn {
   stopListening: () => void;
   transcript: string;
   isSupported: boolean;
-  
+
   // Text-to-Speech
   isPlaying: boolean;
   isTTSLoading: boolean;
@@ -18,18 +18,19 @@ interface UseSpeechReturn {
 
 export function useSpeech(): UseSpeechReturn {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  
+
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Check if Speech Recognition is supported after hydration
   useEffect(() => {
-    const supported = typeof window !== 'undefined' && 
-      ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+    const supported =
+      typeof window !== "undefined" &&
+      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
     setIsSupported(supported);
   }, []);
 
@@ -37,21 +38,22 @@ export function useSpeech(): UseSpeechReturn {
     if (!isSupported) return;
 
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      
+
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'es-ES'; // Spanish
+      recognition.lang = "es-ES"; // Spanish
 
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('');
+        setTranscript("");
       };
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
+        let finalTranscript = "";
+        let interimTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
@@ -71,21 +73,23 @@ export function useSpeech(): UseSpeechReturn {
       recognition.onerror = (event) => {
         // Handle different types of speech recognition errors gracefully
         switch (event.error) {
-          case 'network':
+          case "network":
             // Network errors are common, don't spam console
-            console.warn('Speech recognition: Network connection required for voice input');
+            console.warn(
+              "Speech recognition: Network connection required for voice input",
+            );
             break;
-          case 'not-allowed':
-            console.warn('Speech recognition: Microphone access denied');
+          case "not-allowed":
+            console.warn("Speech recognition: Microphone access denied");
             break;
-          case 'no-speech':
+          case "no-speech":
             // User didn't speak, this is normal
             break;
-          case 'aborted':
+          case "aborted":
             // User cancelled, this is normal
             break;
           default:
-            console.warn('Speech recognition error:', event.error);
+            console.warn("Speech recognition error:", event.error);
         }
         setIsListening(false);
       };
@@ -97,7 +101,7 @@ export function useSpeech(): UseSpeechReturn {
       recognitionRef.current = recognition;
       recognition.start();
     } catch (error) {
-      console.warn('Failed to start speech recognition:', error);
+      console.warn("Failed to start speech recognition:", error);
       setIsListening(false);
     }
   }, [isSupported]);
@@ -113,24 +117,24 @@ export function useSpeech(): UseSpeechReturn {
   const playText = useCallback(async (text: string) => {
     try {
       setIsTTSLoading(true);
-      
+
       const selectedVoice = getCurrentVoice();
-      
-      const response = await fetch('/api/tts', {
-        method: 'POST',
+
+      const response = await fetch("/api/tts", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ text, voice: selectedVoice }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate speech');
+        throw new Error("Failed to generate speech");
       }
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       // Stop any currently playing audio
       if (audioRef.current) {
         audioRef.current.pause();
@@ -156,7 +160,7 @@ export function useSpeech(): UseSpeechReturn {
       setIsTTSLoading(false);
       await audio.play();
     } catch (error) {
-      console.error('TTS error:', error);
+      console.error("TTS error:", error);
       setIsTTSLoading(false);
       setIsPlaying(false);
     }
