@@ -289,7 +289,8 @@ export default function ChatInput({
               flex items-center h-full`}>
               <textarea
                 className={`
-                  min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 text-base resize-none transition-opacity duration-300 group-hover/mini-orb:opacity-0 group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in
+                  text-sm sm:text-base
+                  min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 resize-none transition-opacity duration-300 group-hover/mini-orb:opacity-0 group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in
                 `}
                 value={isMiniOrbHovered ? '' : (input)}
                 placeholder={isMiniOrbHovered ? '' : (messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje...")}
