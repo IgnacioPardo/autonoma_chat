@@ -282,7 +282,7 @@ export default function HomePage() {
         />
         
         {/* background */}
-        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm"></div> 
+        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm animate-in fade-in duration-300"></div> 
         
         {/* NavBar */}
         <NavBar 
@@ -290,7 +290,7 @@ export default function HomePage() {
           isSaving={isSaving}
         />
 
-        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe">
+        <main className="flex min-h-screen w-5/6 sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300">
           <ChatMessages
             messages={messages}
             isLoading={isLoading}
@@ -304,7 +304,7 @@ export default function HomePage() {
             shareTextHandler={shareTextHandler}
           />
           
-          <div className="w-full pb-4 sm:pb-8">
+          <div className="w-full pb-4 sm:pb-8 animate-in fade-in duration-300">
             <ChatInput
               input={input}
               handleInputChange={handleTextareaChange}

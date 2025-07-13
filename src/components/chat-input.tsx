@@ -2,6 +2,7 @@ import { Send, ImagePlus, X, FileText, BarChart3, File, AudioLines } from 'lucid
 import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import VoiceInput from './voice-input';
 import { useSpeech } from '../hooks/use-speech';
@@ -136,12 +137,15 @@ export default function ChatInput({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Estado para controlar el hover del mini-orb
+  const [isMiniOrbHovered, setIsMiniOrbHovered] = useState(false);
+
   return (
     <>
       {/* Background Blur behind input - solo visible cuando hay mensajes */}
       {messages.length > 0 && (
         <div 
-          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient z-[30]"
+          className="fixed bottom-0 w-full h-[140px] backdrop-blur-xs mask-gradient z-[30] animate-in fade-in duration-300"
         ></div>
       )}
       
@@ -164,11 +168,11 @@ export default function ChatInput({
         
         {/* File previews */}
         {uploadedImages.length > 0 && (
-          <div className="mb-3">
+          <div className="mb-3 animate-in fade-in duration-300">
             {/* File previews */}
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3 animate-in fade-in duration-300">
               {uploadedImages.map((file, index) => (
-                <div key={index} className="relative group">
+                <div key={index} className="relative group animate-in fade-in duration-300">
                   {file.type.startsWith('image/') ? (
                     // Image preview
                     <Image
@@ -212,7 +216,7 @@ export default function ChatInput({
 
         {/* Size indicator and progress bar - only show when files are uploaded */}
         {uploadedImages.length > 0 && (
-          <div className="mb-3">
+          <div className="mb-3 animate-in fade-in duration-300">
             {/* Size indicator */}
             <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
               <span>{uploadedImages.length} archivo{uploadedImages.length > 1 ? 's' : ''}</span>
@@ -258,24 +262,35 @@ export default function ChatInput({
           {/* Input Row */}
           <div className="flex w-full flex-row items-center gap-0 bg-white/80 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             {/* Mini Orb Voice Chat Button */}
-            <div className="flex items-center justify-center w-14 h-14">
+            <div 
+              className="relative flex items-center w-14 h-14 group/mini-orb hover:w-full hover:h-full transition-all duration-300 overflow-hidden cursor-pointer animate-in fade-in"
+              onMouseEnter={() => setIsMiniOrbHovered(true)}
+              onMouseLeave={() => setIsMiniOrbHovered(false)}
+            >
               <button
                 type="button"
                 onClick={() => window.location.href = '/voice-chat'}
-                className="mini-orb flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-400 bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                className="mini-orb flex items-center justify-start w-10 h-10 rounded-4xl border-2 border-purple-400 bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 hover:shadow-xl  overflow-hidden group-hover/mini-orb:w-1/2 group-hover/mini-orb:h-12  group-hover/mini-orb:rounded-lg group-hover/mini-orb:border-0 absolute left-1 z-10 pl-5 cursor-pointer gap-4 animate-in fade-in"
                 title="Voice Chat"
+                style={{ transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)' }}
               >
-                <AudioLines size={20} className="text-white group-hover:scale-110 transition-transform duration-200" />
+                {/* <AudioLines size={20} className="text-white" /> */}
+                <span
+                  className="whitespace-nowrap text-white text-md opacity-0 group-hover/mini-orb:opacity-100 group-hover/mini-orb:animate-in group-hover/mini-orb:fade-in group-hover/mini-orb:slide-in-right transition-all duration-300 max-w-0 group-hover/mini-orb:max-w-xs"
+                  style={{ transition: 'max-width 0.3s, opacity 0.3s' }}
+                >
+                  Entrar a conversación por voz
+                </span>
               </button>
             </div>
             {/* Textarea */}
             <div className="flex-1 flex items-center h-full">
               <textarea
                 className={`
-                  min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 text-base resize-none
+                  min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 text-base resize-none transition-opacity duration-300 group-hover/mini-orb:opacity-0 group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in
                 `}
-                value={input}
-                placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
+                value={isMiniOrbHovered ? '' : (input)}
+                placeholder={isMiniOrbHovered ? '' : (messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje...")}
                 onChange={handleInputChange}
                 autoComplete="off"
                 autoCorrect="off"

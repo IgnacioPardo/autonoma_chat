@@ -137,6 +137,7 @@ export default function ChatSidebar({
       
       {/* Sidebar */}
       <div className={`
+        animate-in fade-in duration-300
         fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-sm 
         shadow-xl border-r border-gray-200/50 z-[80] transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
