@@ -281,7 +281,7 @@ export default function ChatMessages({
                                     <span className="font-medium">❌ Error generando imagen</span>
                                   </div>
                                   <div className="text-sm text-red-600 mb-2 break-words">
-                                    {result.error || 'Error desconocido'}
+                                    {result.error ?? 'Error desconocido'}
                                   </div>
                                   {result.prompt && (
                                     <div className="text-xs text-red-600 mt-2 break-words bg-red-100 p-2 rounded">

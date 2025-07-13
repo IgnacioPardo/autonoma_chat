@@ -1,4 +1,4 @@
-import type { Message, ToolInvocation } from 'ai';
+import type { Message } from 'ai';
 import type { ChatHistory } from './chat-history';
 import { getChatById } from './chat-history';
 import { toastUtils } from './toast-utils';
@@ -72,9 +72,9 @@ export async function handleSelectChat(
         baseMessage.toolInvocations = generatedImages.map(att => {
           // Extract prompt from filename: "generated-image-{prompt}-{index}.png"
           let extractedPrompt = 'Generated image';
-          const nameParts = att.name.match(/^generated-image-(.+)-\d+\.png$/);
-          if (nameParts && nameParts[1]) {
-            extractedPrompt = nameParts[1].replace(/-/g, ' ');
+          const namePartsMatch = /^generated-image-(.+)-\d+\.png$/.exec(att.name);
+          if (namePartsMatch?.[1]) {
+            extractedPrompt = namePartsMatch[1].replace(/-/g, ' ');
           }
           
           return {

@@ -31,7 +31,7 @@ export default function HomePage() {
   const isLoadingRef = useRef(false);
   const pendingSaveRef = useRef(false);
 
-  const { messages, input, handleInputChange, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
+  const { messages, input, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
     onFinish: (message) => {
       console.log('=== onFinish: Assistant response completed ===');
       console.log('Assistant message:', {

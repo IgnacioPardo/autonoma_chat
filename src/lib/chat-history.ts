@@ -1,5 +1,22 @@
 import type { Message } from 'ai'
 
+interface ImageGenerationResult {
+  success: boolean;
+  imageUrl: string;
+  prompt?: string;
+}
+
+interface ImageGenerationArgs {
+  prompt?: string;
+}
+
+interface ImageToolInvocation {
+  toolName: 'generateImage';
+  state: 'result';
+  result: ImageGenerationResult;
+  args?: ImageGenerationArgs;
+}
+
 export interface ChatAttachment {
   id: string
   name: string
@@ -70,7 +87,7 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
   chatTitle ??= generateFallbackTitle(messages)
 
   const messagesToSave = messages.map((msg, index) => {
-    let attachments = msg.experimental_attachments?.map(att => ({
+    const attachments = msg.experimental_attachments?.map(att => ({
       name: att.name ?? 'Unknown',
       contentType: att.contentType ?? 'application/octet-stream',
       url: att.url,
@@ -81,25 +98,26 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
     if (msg.toolInvocations) {
       msg.toolInvocations.forEach((invocation, invIndex) => {
         if (invocation.toolName === 'generateImage' && 
-            invocation.state === 'result' && 
-            invocation.result?.success && 
-            invocation.result?.imageUrl) {
+            invocation.state === 'result') {
           
-          const result = invocation.result as { success: boolean; imageUrl: string; prompt?: string; };
-          
-          // Create a safe filename from the prompt (first 50 chars, replace special chars)
-          const promptForFilename = (result.prompt || invocation.args?.prompt || 'image')
-            .substring(0, 50)
-            .replace(/[^a-zA-Z0-9\s]/g, '')
-            .replace(/\s+/g, '-')
-            .toLowerCase();
-          
-          attachments.push({
-            name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
-            contentType: 'image/png',
-            url: result.imageUrl,
-            size: result.imageUrl.length // Base64 size estimate
-          });
+          const typedInvocation = invocation as ImageToolInvocation;
+          if (typedInvocation.result.success && typedInvocation.result.imageUrl) {
+            
+            // Create a safe filename from the prompt (first 50 chars, replace special chars)
+            const promptSource = typedInvocation.result.prompt ?? typedInvocation.args?.prompt ?? 'image';
+            const promptForFilename = String(promptSource)
+              .substring(0, 50)
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .replace(/\s+/g, '-')
+              .toLowerCase();
+            
+            attachments.push({
+              name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
+              contentType: 'image/png',
+              url: typedInvocation.result.imageUrl,
+              size: typedInvocation.result.imageUrl.length // Base64 size estimate
+            });
+          }
         }
       });
     }
@@ -162,7 +180,7 @@ export async function updateChatHistory(chatId: string, messages: Message[]): Pr
   );
   
   const messagesToSave = validMessages.map((msg, index) => {
-    let attachments = msg.experimental_attachments?.map(att => ({
+    const attachments = msg.experimental_attachments?.map(att => ({
       name: att.name ?? 'Unknown',
       contentType: att.contentType ?? 'application/octet-stream',
       url: att.url,
@@ -173,25 +191,26 @@ export async function updateChatHistory(chatId: string, messages: Message[]): Pr
     if (msg.toolInvocations) {
       msg.toolInvocations.forEach((invocation, invIndex) => {
         if (invocation.toolName === 'generateImage' && 
-            invocation.state === 'result' && 
-            invocation.result?.success && 
-            invocation.result?.imageUrl) {
+            invocation.state === 'result') {
           
-          const result = invocation.result as { success: boolean; imageUrl: string; prompt?: string; };
-          
-          // Create a safe filename from the prompt (first 50 chars, replace special chars)
-          const promptForFilename = (result.prompt || invocation.args?.prompt || 'image')
-            .substring(0, 50)
-            .replace(/[^a-zA-Z0-9\s]/g, '')
-            .replace(/\s+/g, '-')
-            .toLowerCase();
-          
-          attachments.push({
-            name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
-            contentType: 'image/png',
-            url: result.imageUrl,
-            size: result.imageUrl.length // Base64 size estimate
-          });
+          const typedInvocation = invocation as ImageToolInvocation;
+          if (typedInvocation.result.success && typedInvocation.result.imageUrl) {
+            
+            // Create a safe filename from the prompt (first 50 chars, replace special chars)
+            const promptSource = typedInvocation.result.prompt ?? typedInvocation.args?.prompt ?? 'image';
+            const promptForFilename = String(promptSource)
+              .substring(0, 50)
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .replace(/\s+/g, '-')
+              .toLowerCase();
+            
+            attachments.push({
+              name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
+              contentType: 'image/png',
+              url: typedInvocation.result.imageUrl,
+              size: typedInvocation.result.imageUrl.length // Base64 size estimate
+            });
+          }
         }
       });
     }
