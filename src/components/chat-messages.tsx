@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Markdown from 'react-markdown';
-import { Check, X, FileText, BarChart3, File } from 'lucide-react';
+import { Check, X, FileText, BarChart3, File, Copy, Share2, Download } from 'lucide-react';
 import MessageActions from './message-actions';
 import LoadingIndicator from './loading-indicator';
 import type { Message, Attachment as AIAttachment } from 'ai';
@@ -48,6 +48,93 @@ export default function ChatMessages({
   shareTextHandler
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Helper function to copy image to clipboard
+  const copyImageToClipboard = async (imageUrl: string) => {
+    try {
+      if (imageUrl.startsWith('data:')) {
+        // For base64 images
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+      } else {
+        // For external URLs, fetch and copy
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+      }
+      // You might want to show a toast notification here
+      console.log('Image copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      // Fallback: copy the image URL
+      await copyToClipboardHandler(imageUrl);
+    }
+  };
+
+  // Helper function to share image
+  const shareImage = async (imageUrl: string, prompt?: string) => {
+    try {
+      if (navigator.share) {
+        // For external URLs (Cloudinary)
+        if (!imageUrl.startsWith('data:')) {
+          await navigator.share({
+            title: 'Generated Image',
+            text: prompt ? `Generated image: ${prompt}` : 'Generated image from Autonoma Chat',
+            url: imageUrl
+          });
+        } else {
+          // For base64, just share the text description and URL
+          await shareTextHandler(prompt ? `Generated image: ${prompt}\n${imageUrl}` : imageUrl);
+        }
+      } else {
+        // Fallback: copy to clipboard
+        await shareTextHandler(imageUrl);
+      }
+    } catch (error) {
+      console.error('Failed to share image:', error);
+      // Fallback: copy to clipboard
+      await shareTextHandler(imageUrl);
+    }
+  };
+
+  // Helper function to download image
+  const downloadImage = async (imageUrl: string, prompt?: string) => {
+    try {
+      let blob: Blob;
+      
+      if (imageUrl.startsWith('data:')) {
+        // For base64 images
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // For external URLs
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Create filename from prompt
+      const filename = prompt 
+        ? `generated-${prompt.substring(0, 30).replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-').toLowerCase()}.png`
+        : 'generated-image.png';
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download image:', error);
+    }
+  };
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -189,7 +276,7 @@ export default function ChatMessages({
         return (
           <div
             key={message.id}
-            className={`flex w-full px-4 h-fit overflow-y-hidden overflow-x-hidden ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`animate-in fade-in slide-in-from-bottom-2 duration-300 flex w-full px-4 h-fit overflow-y-hidden overflow-x-hidden ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div className={`flex flex-col h-fit space-y-1 min-w-0 ${
               message.role === "user" 
@@ -198,7 +285,7 @@ export default function ChatMessages({
             }`}>
               {/* Text message bubble */}
               <div
-                className={`group relative rounded-2xl break-words overflow-visible ${
+                className={`group relative rounded-2xl break-words overflow-visible transition-all duration-200 ease-out ${
                   // Special styling for messages with tool invocations (like image generation)
                   message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
                   ? "bg-transparent border-none shadow-none backdrop-blur-bg-gradient-to-t none px-0 py-0"
@@ -206,45 +293,52 @@ export default function ChatMessages({
                     : !messageText.trim() && hasAttachments && message.role === "user"
                     ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
                     : message.role === "user"
-                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3 min-w-[100px]"
-                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3 min-w-[120px]"
+                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3 min-w-[100px] shadow-lg hover:shadow-xl"
+                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3 min-w-[120px] hover:shadow-md"
                 }`}
               >
                 {editingMessageId === message.id ? (
                   // Edit mode
-                  <div className="space-y-3">
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                          e.preventDefault();
-                          void saveEdit(message.id);
-                        }
-                        if (e.key === 'Escape') {
-                          e.preventDefault();
-                          cancelEdit();
-                        }
-                      }}
-                      className="w-full max-w-full min-h-[80px] p-3 rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-primary-violet text-gray-800 bg-white text-xs sm:text-sm leading-relaxed break-words"
-                      placeholder="Escribe tu mensaje editado..."
-                      autoFocus
-                    />
+                  <div className="space-y-3 w-full">
+                    <div className="relative">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
+                            void saveEdit(message.id);
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelEdit();
+                          }
+                        }}
+                        className="w-full min-h-[120px] p-4 rounded-2xl border-2 border-gray-200 resize-none focus:outline-none focus:border-primary-violet focus:ring-4 focus:ring-primary-violet/10 text-gray-800 bg-white/95 backdrop-blur-sm text-sm leading-relaxed break-words placeholder:text-gray-400 shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md"
+                        placeholder="Escribe tu mensaje editado... (⌘/Ctrl + Enter para guardar, Esc para cancelar)"
+                        autoFocus
+                      />
+                      <div className="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
+                        {editText.length} caracteres
+                      </div>
+                    </div>
                     <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={cancelEdit}
+                        className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer flex items-center gap-2 text-sm"
+                        title="Cancelar edición"
+                      >
+                        <X size={14} />
+                        Cancelar
+                      </button>
                       <button
                         onClick={() => saveEdit(message.id)}
                         disabled={!editText.trim()}
-                        className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-blue to-primary-violet text-white hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 transition-all duration-200 cursor-pointer flex items-center gap-2 text-sm font-medium"
                         title="Guardar cambios"
                       >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="p-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors cursor-pointer"
-                        title="Cancelar edición"
-                      >
-                        <X size={16} />
+                        <Check size={14} />
+                        Guardar
                       </button>
                     </div>
                   </div>
@@ -284,23 +378,48 @@ export default function ChatMessages({
                               const isBase64 = result.imageUrl.startsWith('data:');
                               
                               return (
-                                <div key={index} className="rounded-xl overflow-visible border-2 border-gray-200 shadow-lg bg-white relative z-10 animate-in fade-in duration-500">
-                                  <div className="relative z-10">
+                                <div key={index} className="animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg hover:shadow-xl bg-white relative z-10 transition-all">
+                                  <div className="relative z-10 group">
                                     <Image
                                       src={result.imageUrl}
                                       alt={result.prompt ?? 'Generated image'}
                                       width={1024}
                                       height={1024}
-                                      className="w-full h-auto object-cover rounded-t-lg transition-all duration-300"
+                                      className="w-full h-auto object-cover transition-all duration-300 group-hover:scale-[1.02]"
                                       unoptimized={isBase64} // Only unoptimized for base64, let Next.js optimize Cloudinary URLs
                                     />
                                   </div>
-                                  <div className="p-3 border-t relative z-10">
+                                  <div className="p-3 border-t relative z-10 bg-white/95 backdrop-blur-sm">
                                     <div className="text-xs text-gray-600 mb-1 break-words">
                                       <span className="font-medium">Prompt:</span> {result.prompt}
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 mb-3">
                                       {result.size} • {result.quality} quality
+                                    </div>
+                                    
+                                    {/* Action buttons for generated images */}
+                                    <div className="flex gap-2 justify-end">
+                                      <button
+                                        onClick={() => copyImageToClipboard(result.imageUrl!)}
+                                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                        title="Copiar imagen"
+                                      >
+                                        <Copy size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => shareImage(result.imageUrl!, result.prompt)}
+                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors cursor-pointer"
+                                        title="Compartir imagen"
+                                      >
+                                        <Share2 size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => downloadImage(result.imageUrl!, result.prompt)}
+                                        className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-colors cursor-pointer"
+                                        title="Descargar imagen"
+                                      >
+                                        <Download size={14} />
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
@@ -329,16 +448,25 @@ export default function ChatMessages({
                             // Show loading state for image generation
                             const args = toolInvocation.args as ImageGenerationArgs;
                             return (
-                              <div key={index} className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 relative z-10 animate-in fade-in duration-300">
+                              <div key={index} className="animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-xl border-2 border-blue-200 bg-blue-50/90 backdrop-blur-sm p-4 relative z-10 shadow-lg">
                                 <div className="flex items-center gap-3">
-                                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                                  <div className="text-sm text-blue-700">
-                                    Generando imagen...
+                                  <div className="relative">
+                                    <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                                    <div className="absolute inset-0 animate-ping w-5 h-5 border border-blue-400 rounded-full opacity-20"></div>
+                                  </div>
+                                  <div className="text-sm font-medium text-blue-700">
+                                    Generando imagen con DALL-E 3...
                                   </div>
                                 </div>
-                                <div className="text-xs text-blue-600 mt-2 break-words">
-                                  {args?.prompt && `Prompt: ${args.prompt}`}
+                                <div className="text-xs text-blue-600 mt-3 p-2 bg-blue-100/50 rounded-md break-words">
+                                  <div className="font-medium mb-1">Prompt:</div>
+                                  {args?.prompt ? `"${args.prompt}"` : "Creando imagen personalizada..."}
                                 </div>
+                                {/* <div className="mt-3 flex gap-1">
+                                  <div className="w-2 h-2 bg-blue-300 rounded-full animate-typing-pulse"></div>
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-typing-pulse-delay-1"></div>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-typing-pulse-delay-2"></div>
+                                </div> */}
                               </div>
                             );
                           }
@@ -382,7 +510,7 @@ export default function ChatMessages({
                       return (
                         <div 
                           key={index} 
-                          className={`rounded-xl overflow-hidden border-2 shadow-lg bg-white relative z-1 ${
+                          className={`animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-xl overflow-hidden border-2 shadow-lg hover:shadow-xl bg-white relative z-1 transition-all group ${
                             isGeneratedImage ? 'border-gray-200' : 'border-gray-200'
                           }`}
                         >
@@ -390,7 +518,7 @@ export default function ChatMessages({
                             <Image
                               src={attachment.url}
                               alt={attachment.name ?? `Image ${index + 1}`}
-                              className="max-w-full h-auto relative z-1 rounded-t-lg"
+                              className="max-w-full h-auto relative z-1 rounded-t-lg transition-transform duration-300 group-hover:scale-[1.02]"
                               width={isGeneratedImage ? 1024 : 300}
                               height={isGeneratedImage ? 1024 : 250}
                               style={{ 
@@ -404,20 +532,72 @@ export default function ChatMessages({
                           
                           {/* Show generation info for generated images */}
                           {isGeneratedImage && generationMetadata?.prompt && (
-                            <div className="p-3 border-t relative z-1">
+                            <div className="p-3 relative z-1">
                               <div className="text-xs text-gray-600 mb-1 break-words">
                                 <span className="font-medium">Prompt:</span> {generationMetadata?.prompt ?? 'No prompt available'}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 mb-3">
                                 {generationMetadata?.size ?? 'Unknown size'} • {generationMetadata?.quality ?? 'Unknown quality'} quality
+                              </div>
+                              
+                              {/* Action buttons for generated images */}
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  onClick={() => copyImageToClipboard(attachment.url)}
+                                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                  title="Copiar imagen"
+                                >
+                                  <Copy size={14} />
+                                </button>
+                                <button
+                                  onClick={() => shareImage(attachment.url, generationMetadata?.prompt)}
+                                  className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors cursor-pointer"
+                                  title="Compartir imagen"
+                                >
+                                  <Share2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => downloadImage(attachment.url, generationMetadata?.prompt)}
+                                  className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-colors cursor-pointer"
+                                  title="Descargar imagen"
+                                >
+                                  <Download size={14} />
+                                </button>
                               </div>
                             </div>
                           )}
                           
-                          {/* Show filename for regular uploaded images */}
+                          {/* Show filename and actions for regular uploaded images */}
                           {!isGeneratedImage && attachment.name && (
-                            <div className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded-b-lg relative z-1">
-                              {attachment.name}
+                            <div className="bg-gray-50 relative z-1">
+                              <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">
+                                {attachment.name}
+                              </div>
+                              
+                              {/* Action buttons for uploaded images */}
+                              <div className="flex gap-2 justify-end p-2">
+                                <button
+                                  onClick={() => copyImageToClipboard(attachment.url)}
+                                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                  title="Copiar imagen"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                                <button
+                                  onClick={() => shareImage(attachment.url, attachment.name)}
+                                  className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors cursor-pointer"
+                                  title="Compartir imagen"
+                                >
+                                  <Share2 size={12} />
+                                </button>
+                                <button
+                                  onClick={() => downloadImage(attachment.url, attachment.name)}
+                                  className="p-1.5 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-colors cursor-pointer"
+                                  title="Descargar imagen"
+                                >
+                                  <Download size={12} />
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -432,7 +612,7 @@ export default function ChatMessages({
                       return (
                         <div 
                           key={index} 
-                          className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-white p-3 relative z-1 max-w-sm"
+                          className="animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg hover:shadow-xl bg-white p-3 relative z-1 max-w-sm transition-all hover:border-gray-300"
                         >
                           {/* Header with icon and filename */}
                           <div className={`flex items-center gap-2 ${showContentPreview && textContent ? 'mb-2 pb-2 border-b border-gray-100' : ''}`}>
@@ -479,6 +659,11 @@ export default function ChatMessages({
     if (messages.length === 0) return false;
     
     const lastMessage = messages[messages.length - 1];
+    
+    // Check if there are active tool invocations (like image generation)
+    if (lastMessage?.toolInvocations?.some(tool => tool.state === 'call')) {
+      return true;
+    }
     
     // If last message is from assistant, assume streaming has started
     // This includes empty messages that are about to receive content or tool invocations

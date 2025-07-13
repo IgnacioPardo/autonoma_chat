@@ -6,8 +6,8 @@ import type { Message } from "ai";
 import { z } from 'zod';
 import { generateImage } from '~/lib/image-generation';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow streaming responses up to 60 seconds for image generation
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   // Check content length before processing
@@ -115,20 +115,33 @@ export async function POST(req: Request) {
             quality: z.enum(['standard', 'hd']).default('standard').describe('The quality of the image')
           }),
           execute: async ({ prompt, size, quality }) => {
+            console.log('🎨 Starting image generation tool execution...');
+            console.log('Parameters:', { prompt: prompt.substring(0, 100), size, quality });
+            
             try {
+              console.log('📞 Calling generateImage function...');
               // Call image generation function directly
               const result = await generateImage({ prompt, size, quality });
               
+              console.log('📊 Image generation result:', { 
+                success: result.success, 
+                hasUrl: !!result.imageUrl, 
+                hasError: !!result.error 
+              });
+              
               if (result.success && result.imageUrl) {
+                console.log('✅ Image generation successful, returning result');
                 return {
                   success: true,
                   imageUrl: result.imageUrl,
+                  cloudinaryPublicId: result.cloudinaryPublicId,
                   prompt: result.prompt ?? prompt,
                   revisedPrompt: result.revisedPrompt,
                   size: size,
                   quality: quality
                 };
               } else {
+                console.log('❌ Image generation failed:', result.error);
                 return {
                   success: false,
                   error: result.error ?? 'Unknown error',
@@ -136,7 +149,7 @@ export async function POST(req: Request) {
                 };
               }
             } catch (error) {
-              console.error('Error generating image:', error);
+              console.error('💥 Error in image generation tool:', error);
               return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',

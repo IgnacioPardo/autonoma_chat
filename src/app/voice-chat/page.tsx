@@ -86,7 +86,7 @@ export default function VoiceChatPage() {
 
           {/* Voice Chat Interface */}
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 aspect-[3/4] flex flex-col">
+            <div className="bg-white/50 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 aspect-[3/4] flex flex-col">
               <ElevenLabsChat
                 // onTranscript={handleVoiceTranscript}
               />

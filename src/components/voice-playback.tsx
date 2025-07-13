@@ -33,15 +33,21 @@ export default function VoicePlayback({
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className="cursor-pointer rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/50 p-2 shadow-md transition-all duration-150 hover:bg-gray-50 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-      title={isPlaying ? 'Stop playback' : 'Play message'}
+      className={`p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+        isLoading
+          ? 'bg-gray-100 text-gray-500'
+          : isPlaying 
+          ? 'bg-red-100 hover:bg-red-200 text-red-700' 
+          : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+      }`}
+      title={isPlaying ? 'Detener reproducción' : 'Reproducir mensaje'}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : isPlaying ? (
-        <VolumeX className="h-4 w-4 text-red-600" />
+        <VolumeX className="h-4 w-4" />
       ) : (
-        <Volume2 className="h-4 w-4 text-gray-600" />
+        <Volume2 className="h-4 w-4" />
       )}
     </button>
   );

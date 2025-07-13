@@ -33,10 +33,10 @@ export default function MessageActions({
       {isUserMessage && onEdit && (
         <button
           onClick={onEdit}
-          className="cursor-pointer rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/50 p-2 shadow-md transition-all duration-150 hover:bg-gray-50 hover:shadow-lg"
+          className="p-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-700 transition-colors cursor-pointer"
           title="Editar mensaje"
         >
-          <Edit3 className="h-4 w-4 text-gray-600" />
+          <Edit3 className="h-4 w-4" />
         </button>
       )}
       
@@ -53,18 +53,18 @@ export default function MessageActions({
       
       <button
         onClick={() => onCopy(messageText)}
-        className="cursor-pointer rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/50 p-2 shadow-md transition-all duration-150 hover:bg-gray-50 hover:shadow-lg"
+        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
         title="Copiar mensaje"
       >
-        <Copy className="h-4 w-4 text-gray-600" />
+        <Copy className="h-4 w-4" />
       </button>
       
       <button
         onClick={() => onShare(messageText)}
-        className="cursor-pointer rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/50 p-2 shadow-md transition-all duration-150 hover:bg-gray-50 hover:shadow-lg"
+        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors cursor-pointer"
         title="Compartir mensaje"
       >
-        <Share className="h-4 w-4 text-gray-600" />
+        <Share className="h-4 w-4" />
       </button>
     </div>
   );

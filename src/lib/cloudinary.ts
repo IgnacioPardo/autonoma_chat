@@ -33,18 +33,28 @@ export async function uploadImageToCloudinary(
   filename?: string
 ): Promise<CloudinaryUploadResult> {
   try {
+    console.log('☁️ Starting Cloudinary upload process...');
+    
     // Add data:image/png;base64, prefix if not present
     const dataUrl = base64Data.startsWith('data:') 
       ? base64Data 
       : `data:image/png;base64,${base64Data}`;
 
+    console.log('📤 Uploading to Cloudinary with options...');
+    const uploadStartTime = Date.now();
+    
     const uploadResult = await cloudinary.uploader.upload(dataUrl, {
       folder: 'autonoma-chat/generated-images',
       public_id: filename ? `generated-${filename}-${Date.now()}` : undefined,
       resource_type: 'image',
       format: 'png',
       quality: 'auto:good',
+      timeout: 40000, // 40 second timeout for upload
     }) as CloudinaryUploadResponse;
+
+    const uploadTime = Date.now() - uploadStartTime;
+    console.log(`✅ Cloudinary upload successful in ${uploadTime}ms`);
+    console.log('📷 Image URL:', uploadResult.secure_url);
 
     return {
       success: true,
@@ -52,7 +62,12 @@ export async function uploadImageToCloudinary(
       public_id: uploadResult.public_id,
     };
   } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
+    console.error('💥 Cloudinary upload error:', error);
+    console.error('Upload error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to upload image',
