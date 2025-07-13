@@ -64,7 +64,7 @@ export default function HomePage() {
           };
 
           const data: Data = JSON.parse(init.body) as Data;
-          
+
           if (data.messages && Array.isArray(data.messages)) {
             // Completely remove toolInvocations from ALL messages for stream processing
             const cleanedMessages = data.messages.map((message) => {
@@ -122,6 +122,7 @@ export default function HomePage() {
           name: string;
           contentType: string;
           url: string;
+          cloudinaryPublicId?: string;
           metadata: {
             prompt?: string;
             size?: string;
@@ -140,6 +141,7 @@ export default function HomePage() {
             const result = invocation.result as {
               success?: boolean;
               imageUrl?: string;
+              cloudinaryPublicId?: string;
               prompt?: string;
               size?: string;
               quality?: string;
@@ -157,6 +159,7 @@ export default function HomePage() {
                 name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
                 contentType: "image/png",
                 url: result.imageUrl,
+                cloudinaryPublicId: result.cloudinaryPublicId,
                 // Store metadata about the generation for UI display
                 metadata: {
                   prompt: result.prompt,

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { uploadImageToCloudinary } from './cloudinary';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,6 +14,7 @@ export interface ImageGenerationParams {
 export interface ImageGenerationResult {
   success: boolean;
   imageUrl?: string;
+  cloudinaryPublicId?: string;
   prompt?: string;
   revisedPrompt?: string;
   error?: string;
@@ -47,13 +49,29 @@ export async function generateImage({
       throw new Error('No image data returned');
     }
 
-    // Convert to data URL
+    // Get the base64 image data
     const base64Image = response.data[0].b64_json;
-    const dataUrl = `data:image/png;base64,${base64Image}`;
+    
+    // Upload to Cloudinary instead of returning base64
+    const uploadResult = await uploadImageToCloudinary(
+      base64Image,
+      prompt.substring(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-').toLowerCase()
+    );
+
+    if (!uploadResult.success) {
+      console.error('Failed to upload to Cloudinary:', uploadResult.error);
+      return {
+        success: false,
+        error: `Failed to upload image: ${uploadResult.error}`
+      };
+    }
+
+    console.log('Image uploaded to Cloudinary:', uploadResult.url);
 
     return {
       success: true,
-      imageUrl: dataUrl,
+      imageUrl: uploadResult.url!,
+      cloudinaryPublicId: uploadResult.public_id,
       prompt,
       revisedPrompt: response.data[0].revised_prompt,
     };

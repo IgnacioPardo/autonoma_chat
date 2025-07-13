@@ -1,4 +1,4 @@
-import type { Message } from 'ai'
+import type { Message, Attachment as AIAttachment } from 'ai'
 
 interface ImageGenerationResult {
   success: boolean;
@@ -10,11 +10,9 @@ interface ImageGenerationArgs {
   prompt?: string;
 }
 
-interface _ImageToolInvocation {
-  toolName: 'generateImage';
-  state: 'result';
-  result: ImageGenerationResult;
-  args?: ImageGenerationArgs;
+// Extended attachment interface that includes cloudinaryPublicId
+interface ExtendedAttachment extends AIAttachment {
+  cloudinaryPublicId?: string;
 }
 
 export interface ChatAttachment {
@@ -87,12 +85,17 @@ export async function saveChatHistory(messages: Message[], title?: string): Prom
   chatTitle ??= generateFallbackTitle(messages)
 
   const messagesToSave = messages.map((msg, index) => {
-    const attachments = msg.experimental_attachments?.map(att => ({
-      name: att.name ?? 'Unknown',
-      contentType: att.contentType ?? 'application/octet-stream',
-      url: att.url,
-      size: att.url ? Math.round(att.url.length * 0.75) : undefined // Rough estimate of base64 size
-    })) ?? [];
+    const attachments = msg.experimental_attachments?.map(att => {
+      // Type-safe way to access cloudinaryPublicId
+      const extendedAtt = att as ExtendedAttachment;
+      return {
+        name: att.name ?? 'Unknown',
+        contentType: att.contentType ?? 'application/octet-stream',
+        url: att.url,
+        cloudinaryPublicId: extendedAtt.cloudinaryPublicId ?? undefined,
+        size: att.url ? Math.round(att.url.length * 0.75) : undefined // Rough estimate of base64 size
+      };
+    }) ?? [];
 
     // Note: toolInvocations are now converted to attachments in the frontend onFinish callback
     // so we don't need to process them here anymore
@@ -155,12 +158,17 @@ export async function updateChatHistory(chatId: string, messages: Message[]): Pr
   );
   
   const messagesToSave = validMessages.map((msg, index) => {
-    const attachments = msg.experimental_attachments?.map(att => ({
-      name: att.name ?? 'Unknown',
-      contentType: att.contentType ?? 'application/octet-stream',
-      url: att.url,
-      size: att.url ? Math.round(att.url.length * 0.75) : undefined
-    })) ?? [];
+    const attachments = msg.experimental_attachments?.map(att => {
+      // Type-safe way to access cloudinaryPublicId
+      const extendedAtt = att as ExtendedAttachment;
+      return {
+        name: att.name ?? 'Unknown',
+        contentType: att.contentType ?? 'application/octet-stream',
+        url: att.url,
+        cloudinaryPublicId: extendedAtt.cloudinaryPublicId ?? undefined,
+        size: att.url ? Math.round(att.url.length * 0.75) : undefined
+      };
+    }) ?? [];
 
     // Note: toolInvocations are now converted to attachments in the frontend onFinish callback
     // so we don't need to process them here anymore
