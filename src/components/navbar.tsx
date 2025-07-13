@@ -93,7 +93,7 @@ export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBa
         {isSaving && (
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <div className="border-primary-violet h-3 w-3 animate-spin rounded-full border-b"></div>
-            <span>Guardando</span>
+            <span className="hidden sm:inline">Guardando</span>
           </div>
         )}
 

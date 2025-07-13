@@ -144,7 +144,7 @@ export default function SignIn() {
           <div className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 backdrop-blur-md">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-              <p className="mt-4 text-white">Cargando...</p>
+              {/* <p className="mt-4 text-white">Cargando...</p> */}
             </div>
           </div>
         </div>
