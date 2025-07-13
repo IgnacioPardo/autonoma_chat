@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, Volume2 } from 'lucide-react';
 
 interface VoiceSettingsProps {
@@ -83,99 +84,113 @@ export default function VoiceSettings({ isOpen, onClose }: VoiceSettingsProps) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-white/10 bg-opacity-10 backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden border border-gray-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center gap-2">
-            <Settings size={20} className="text-primary-violet" />
-            <h2 className="text-lg font-semibold text-gray-800">Configuración de Voz</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-200 rounded-lg transition-colors text-gray-500 hover:text-gray-700"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 bg-white/10 bg-opacity-10 backdrop-blur-sm flex items-center justify-center z-[100]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+        >
+          <motion.div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden border border-gray-200"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
           >
-            ✕
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-3">
-              Selecciona tu voz preferida para el texto a voz. Haz clic en el ícono de volumen para escuchar una muestra.
-            </p>
-          </div>
-
-          {/* Voice Options */}
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {VOICE_OPTIONS.map((voice) => (
-              <div
-                key={voice.value}
-                className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                  selectedVoice === voice.value
-                    ? 'border-primary-violet bg-primary-violet/5'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-                onClick={() => handleVoiceChange(voice.value)}
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary-violet" />
+                <h2 className="text-lg font-semibold text-gray-800">Configuración de Voz</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-gray-200 rounded-lg transition-colors text-gray-500 hover:text-gray-700"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="voice"
-                      value={voice.value}
-                      checked={selectedVoice === voice.value}
-                      onChange={() => handleVoiceChange(voice.value)}
-                      className="text-primary-violet focus:ring-primary-violet"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-800">{voice.name}</div>
-                      <div className="text-xs text-gray-500">{voice.description}</div>
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Selecciona tu voz preferida para el texto a voz. Haz clic en el ícono de volumen para escuchar una muestra.
+                </p>
+              </div>
+
+              {/* Voice Options */}
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {VOICE_OPTIONS.map((voice) => (
+                  <div
+                    key={voice.value}
+                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                      selectedVoice === voice.value
+                        ? 'border-primary-violet bg-primary-violet/5'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleVoiceChange(voice.value)}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="voice"
+                          value={voice.value}
+                          checked={selectedVoice === voice.value}
+                          onChange={() => handleVoiceChange(voice.value)}
+                          className="text-primary-violet focus:ring-primary-violet"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-800">{voice.name}</div>
+                          <div className="text-xs text-gray-500">{voice.description}</div>
+                        </div>
+                      </div>
                     </div>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void previewVoice(voice.value);
+                      }}
+                      disabled={isPlaying !== null}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isPlaying === voice.value
+                          ? 'bg-primary-violet text-white'
+                          : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+                      }`}
+                      title="Escuchar muestra"
+                    >
+                      {isPlaying === voice.value ? (
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      ) : (
+                        <Volume2 size={16} />
+                      )}
+                    </button>
                   </div>
-                </div>
-                
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-end gap-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void previewVoice(voice.value);
-                  }}
-                  disabled={isPlaying !== null}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isPlaying === voice.value
-                      ? 'bg-primary-violet text-white'
-                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
-                  }`}
-                  title="Escuchar muestra"
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                 >
-                  {isPlaying === voice.value ? (
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  ) : (
-                    <Volume2 size={16} />
-                  )}
+                  Cerrar
                 </button>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

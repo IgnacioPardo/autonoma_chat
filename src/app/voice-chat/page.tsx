@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+// import { useState } from 'react';
 import { ElevenLabsChat } from "~/components/elevenlabs-chat";
 import AuthGuard from "~/components/auth-guard";
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function VoiceChatPage() {
-  const [transcript, setTranscript] = useState<string>('');
-  const handleVoiceTranscript = (newTranscript: string) => {
-    setTranscript(newTranscript);
-    console.log('Voice transcript received:', newTranscript);
-  };
+    //   const [transcript, setTranscript] = useState<string>('');
+    //   const handleVoiceTranscript = (newTranscript: string) => {
+    //     setTranscript(newTranscript);
+    //     console.log('Voice transcript received:', newTranscript);
+    //   };
 
   return (
     <AuthGuard>
@@ -61,7 +61,7 @@ export default function VoiceChatPage() {
           <div className="w-full max-w-md mx-auto">
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 aspect-[3/4] flex flex-col">
               <ElevenLabsChat
-                onTranscript={handleVoiceTranscript}
+                // onTranscript={handleVoiceTranscript}
               />
             </div>
           </div>

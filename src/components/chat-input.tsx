@@ -1,4 +1,4 @@
-import { Send, ImagePlus, X, FileText, BarChart3, File, AudioLines } from 'lucide-react';
+import { Send, ImagePlus, X, FileText, BarChart3, File } from 'lucide-react';
 import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
@@ -284,7 +284,9 @@ export default function ChatInput({
               </button>
             </div>
             {/* Textarea */}
-            <div className="flex-1 flex items-center h-full">
+            <div className={`
+              ${!isListening ? 'flex-1' : 'hidden'}
+              flex items-center h-full`}>
               <textarea
                 className={`
                   min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 text-base resize-none transition-opacity duration-300 group-hover/mini-orb:opacity-0 group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in
@@ -334,7 +336,9 @@ export default function ChatInput({
               />
             </div>
             {/* Mic Icon */}
-            <div className="flex items-center justify-center w-14 h-14">
+            <div className={`
+              ${isListening ? 'flex-1 w-full' : 'w-14'}
+              flex items-center justify-start h-14`}>
               <VoiceInput
                 isListening={isListening}
                 isSupported={isSupported}
@@ -343,7 +347,7 @@ export default function ChatInput({
                 onStopListening={stopListening}
                 onTranscriptSubmit={handleVoiceTranscript}
               />
-            </div>
+            </div>  
             {/* Image Upload Icon */}
             <div className="flex items-center justify-center w-14 h-14">
               <button
