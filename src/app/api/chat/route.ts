@@ -4,6 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { streamText, convertToCoreMessages, tool } from "ai";
 import type { Message } from "ai";
 import { z } from 'zod';
+import { generateImage } from '~/lib/image-generation';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -79,32 +80,25 @@ export async function POST(req: Request) {
           }),
           execute: async ({ prompt, size, quality }) => {
             try {
-              // Call our image generation API
-              const response = await fetch(`${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/generate-image`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt, size, quality }),
-              });
-
-              if (!response.ok) {
-                throw new Error(`Image generation failed: ${response.statusText}`);
-              }
-
-              const data = await response.json() as { 
-                success?: boolean;
-                imageUrl?: string; 
-                error?: string;
-              };
+              // Call image generation function directly
+              const result = await generateImage({ prompt, size, quality });
               
-              return {
-                success: true,
-                imageUrl: data.imageUrl,
-                prompt: prompt,
-                size: size,
-                quality: quality
-              };
+              if (result.success && result.imageUrl) {
+                return {
+                  success: true,
+                  imageUrl: result.imageUrl,
+                  prompt: result.prompt ?? prompt,
+                  revisedPrompt: result.revisedPrompt,
+                  size: size,
+                  quality: quality
+                };
+              } else {
+                return {
+                  success: false,
+                  error: result.error ?? 'Unknown error',
+                  prompt: prompt
+                };
+              }
             } catch (error) {
               console.error('Error generating image:', error);
               return {

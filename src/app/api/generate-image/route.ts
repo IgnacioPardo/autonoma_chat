@@ -1,10 +1,6 @@
-import OpenAI from 'openai';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateImage } from '~/lib/image-generation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,35 +18,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Generating image with prompt:', prompt);
-
-    // Use OpenAI directly for image generation
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
+    const result = await generateImage({
       prompt,
       size: size as '1024x1024' | '1024x1792' | '1792x1024',
-      quality: quality as 'standard' | 'hd',
-      response_format: 'b64_json',
-      n: 1,
+      quality: quality as 'standard' | 'hd'
     });
 
-    if (!response.data?.[0]?.b64_json) {
-      throw new Error('No image data returned');
+    if (result.success) {
+      return NextResponse.json(result);
+    } else {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 500 }
+      );
     }
 
-    // Convert to data URL
-    const base64Image = response.data[0].b64_json;
-    const dataUrl = `data:image/png;base64,${base64Image}`;
-
-    return NextResponse.json({
-      success: true,
-      imageUrl: dataUrl,
-      prompt,
-      revisedPrompt: response.data[0].revised_prompt,
-    });
-
   } catch (error) {
-    console.error('Error generating image:', error);
+    console.error('Error in generate-image endpoint:', error);
     return NextResponse.json(
       { error: 'Failed to generate image' },
       { status: 500 }
