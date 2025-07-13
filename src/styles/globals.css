@@ -139,3 +139,146 @@ textarea {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Orb animation styles */
+.orb {
+  animation: spin 3s linear infinite;
+  width: 240px;
+  height: 240px;
+  margin: auto;
+  border-radius: 50%;
+  position: relative;
+  box-shadow:
+    inset 0 0 30px rgba(255, 255, 255, 0.8),
+    inset 15px 0 40px rgba(138, 43, 226, 0.6),
+    inset -15px 0 40px rgba(0, 100, 255, 0.6),
+    inset 15px 0 150px rgba(138, 43, 226, 0.4),
+    inset -15px 0 150px rgba(0, 100, 255, 0.4),
+    0 0 30px rgba(255, 255, 255, 0.5),
+    -8px 0 40px rgba(138, 43, 226, 0.3),
+    8px 0 40px rgba(0, 100, 255, 0.3);
+  transition: all 0.3s ease;
+  animation-play-state: paused;
+}
+
+.orb-active {
+  animation: spin-active 2s linear infinite;
+  box-shadow:
+    inset 0 0 40px rgba(255, 255, 255, 1),
+    inset 20px 0 50px rgba(138, 43, 226, 0.8),
+    inset -20px 0 50px rgba(116, 10, 165, 0.8),
+    inset 20px 0 200px rgba(138, 43, 226, 0.6),
+    inset -20px 0 200px rgba(255, 0, 157, 0.6),
+    0 0 40px rgba(255, 255, 255, 0.8),
+    -10px 0 50px rgba(138, 43, 226, 0.5),
+    10px 0 50px rgba(0, 255, 100, 0.5);
+    transition: all 0.3s ease;
+    animation-play-state: running;
+}
+
+.orb-speaking {
+  animation: spin-speaking 5s linear infinite;
+  transform: scale(1.1);
+  box-shadow:
+    inset 0 0 50px rgba(255, 255, 255, 1),
+    inset 25px 0 60px rgba(255, 0, 255, 0.9),
+    inset -25px 0 60px rgba(0, 255, 255, 0.9),
+    inset 25px 0 250px rgba(255, 0, 255, 0.7),
+    inset -25px 0 250px rgba(0, 255, 255, 0.7),
+    0 0 50px rgba(255, 255, 255, 1),
+    -15px 0 60px rgba(255, 0, 255, 0.6),
+    15px 0 60px rgba(0, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  animation-play-state: running;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+    top: 0px;
+  }
+  25% {
+    top: 2px;
+  }
+  50% {
+    top: 5px;
+  }
+  75% {
+    top: 2px;
+  }
+  100% {
+    transform: rotate(360deg);
+    top: 0px;
+  }
+}
+
+@keyframes spin-active {
+  0% {
+    transform: rotate(0deg);
+    top: 0px;
+  }
+  25% {
+    top: 3px;
+  }
+  50% {
+    top: 6px;
+  }
+  75% {
+    top: 3px;
+  }
+  100% {
+    transform: rotate(360deg);
+    top: 0px;
+  }
+}
+
+@keyframes spin-speaking {
+  0% {
+    transform: rotate(0deg) scale(1.1);
+    top: 0px;
+  }
+  25% {
+    top: 4px;
+  }
+  50% {
+    transform: rotate(20deg) scale(1.1);
+    top: 8px;
+  }
+  75% {
+    top: 4px;
+  }
+  100% {
+    transform: rotate(0deg) scale(1.1);
+    top: 0px;
+  }
+}
+
+/* Mini orb for voice chat button */
+.mini-orb {
+  position: relative;
+  overflow: hidden;
+}
+
+.mini-orb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(138, 43, 226, 0.3), rgba(0, 100, 255, 0.3), rgba(138, 43, 226, 0.3));
+  animation: mini-orb-spin 3s linear infinite;
+  opacity: 0.7;
+}
+
+.mini-orb:hover::before {
+  animation: mini-orb-spin 1.5s linear infinite;
+  opacity: 1;
+}
+
+@keyframes mini-orb-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

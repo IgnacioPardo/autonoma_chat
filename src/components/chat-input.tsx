@@ -1,4 +1,4 @@
-import { Send, Pencil, ImagePlus, X, FileText, BarChart3, File } from 'lucide-react';
+import { Send, ImagePlus, X, FileText, BarChart3, File, AudioLines } from 'lucide-react';
 import Image from 'next/image';
 import type { Message, Attachment } from 'ai';
 import { useRef } from 'react';
@@ -256,44 +256,23 @@ export default function ChatInput({
           className="mb-4 flex w-full flex-col gap-3"
         >
           {/* Input Row */}
-          <div className="flex w-full flex-row items-end gap-3">
-            <div className="relative flex-1">
-              <Pencil 
-                size={18} 
-                className="absolute left-4 top-4 text-primary-violet z-20 transition-colors duration-300" 
-              />
-              
-              {/* File upload button inside input on the right */}
-              <div className="absolute right-4 top-4 flex items-center gap-1 z-20">
-                <VoiceInput
-                  isListening={isListening}
-                  isSupported={isSupported}
-                  transcript={transcript}
-                  onStartListening={startListening}
-                  onStopListening={stopListening}
-                  onTranscriptSubmit={handleVoiceTranscript}
-                />
-                
-                <button
-                  type="button"
-                  onClick={handleImageButtonClick}
-                  className="p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                  title="Agregar archivos (imágenes, CSV, Markdown, PDF)"
-                >
-                  <ImagePlus size={18} />
-                </button>
-              </div>
-              
+          <div className="flex w-full flex-row items-center gap-0 bg-white/80 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            {/* Mini Orb Voice Chat Button */}
+            <div className="flex items-center justify-center w-14 h-14">
+              <button
+                type="button"
+                onClick={() => window.location.href = '/voice-chat'}
+                className="mini-orb flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-400 bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                title="Voice Chat"
+              >
+                <AudioLines size={20} className="text-white group-hover:scale-110 transition-transform duration-200" />
+              </button>
+            </div>
+            {/* Textarea */}
+            <div className="flex-1 flex items-center h-full">
               <textarea
                 className={`
-                  min-h-[56px] max-h-40 w-full rounded-2xl border border-gray-300 pl-12 pr-24 py-4 
-                  shadow-sm backdrop-blur-xs transition-all duration-500 ease-in-out resize-none
-                  focus:ring-primary-violet focus:border-transparent focus:ring-2 focus:outline-none
-                  text-base overflow-y-auto
-                  ${messages.length === 0 
-                    ? 'bg-white/75 border-gray-300/60 shadow-lg' 
-                    : 'bg-white/40 border-gray-300/40 shadow-sm'
-                  }
+                  min-h-[56px] max-h-40 w-full bg-transparent border-0 focus:ring-0 focus:outline-none px-2 py-4 text-base resize-none
                 `}
                 value={input}
                 placeholder={messages.length === 0 ? "Comienza una conversación..." : "Escribe tu mensaje..."}
@@ -303,71 +282,69 @@ export default function ChatInput({
                 autoCapitalize="off"
                 spellCheck="false"
                 rows={1}
-                style={{ 
-                  fontSize: '16px',
-                  lineHeight: '1.5'
-                }}
+                style={{ fontSize: '16px', lineHeight: '1.5' }}
                 onInput={(e) => {
                   // Auto-resize textarea based on content
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 160) + 'px'; // max-h-40 = 160px
+                  target.style.height = Math.min(target.scrollHeight, 160) + 'px';
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    console.log('Enter pressed - triggering handleFormSubmit');
-                    console.log('Current uploadedImages count:', uploadedImages.length);
-                    
-                    // Trigger the same logic as handleFormSubmit
                     if (!input.trim() && uploadedImages.length === 0) return;
-                    
                     if (uploadedImages.length > 0) {
-                      // Handle images like in handleFormSubmit
                       void (async () => {
-                        console.log('Processing images for attachment (Enter)...');
                         const attachments = await processFileAttachments(uploadedImages);
-                        console.log('Processed attachments (Enter):', attachments.map((a: Attachment) => ({ 
-                          name: a.name, 
-                          urlLength: a.url.length,
-                          contentType: a.contentType 
-                        })));
-                        
                         void append({
                           content: input ?? "Imagen enviada",
                           role: 'user',
                           experimental_attachments: attachments,
                         });
-                        
                         setInput('');
                         setUploadedImages([]);
-                        
-                        // Reset textarea height
                         const textarea = e.target as HTMLTextAreaElement;
                         textarea.style.height = 'auto';
-                        
-                        console.log('Cleared form after sending (Enter)');
                       })();
                     } else {
-                      // Handle text-only like normal - create a synthetic form event
-                      const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent<HTMLFormElement>;
-                      void handleSubmit(formEvent);
-                      
-                      // Reset textarea height after sending
-                      setTimeout(() => {
-                        const textarea = e.target as HTMLTextAreaElement;
-                        textarea.style.height = 'auto';
-                      }, 0);
+                      // Crear un evento sintético compatible con FormEvent<HTMLFormElement>
+                      const syntheticEvent = {
+                        // preventDefault: () => {},
+                        target: null
+                      } as unknown as React.FormEvent<HTMLFormElement>;
+                      handleSubmit(syntheticEvent);
                     }
                   }
                 }}
               />
             </div>
-
+            {/* Mic Icon */}
+            <div className="flex items-center justify-center w-14 h-14">
+              <VoiceInput
+                isListening={isListening}
+                isSupported={isSupported}
+                transcript={transcript}
+                onStartListening={startListening}
+                onStopListening={stopListening}
+                onTranscriptSubmit={handleVoiceTranscript}
+              />
+            </div>
+            {/* Image Upload Icon */}
+            <div className="flex items-center justify-center w-14 h-14">
+              <button
+                type="button"
+                onClick={handleImageButtonClick}
+                className="p-2 text-primary-violet hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title="Agregar archivos (imágenes, CSV, Markdown, PDF)"
+              >
+                <ImagePlus size={22} />
+              </button>
+            </div>
+            {/* Send Button */}
             <button
               type="submit"
               disabled={!input.trim() && uploadedImages.length === 0}
-              className="from-primary-blue to-primary-violet border-border-violet flex min-h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-end"
+              className="from-primary-blue to-primary-violet border-border-violet flex min-h-[56px] items-center justify-center rounded-2xl border bg-gradient-to-b px-4 py-4 whitespace-nowrap text-white shadow-lg transition-shadow duration-200 hover:shadow-xl gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-end ml-2"
             >
               <Send size={20} />
               <span className="hidden sm:inline">Enviar</span>
