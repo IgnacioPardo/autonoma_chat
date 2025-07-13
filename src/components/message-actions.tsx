@@ -27,7 +27,7 @@ export default function MessageActions({
 
   return (
     <div
-      className={`absolute ${isUserMessage ? "right-0" : "left-0"} -bottom-10 flex flex-row gap-1 z-20 opacity-100`}
+      className={`relative flex flex-row gap-1 z-20 opacity-100 p-2`}
     >
       {/* Edit button - only for user messages */}
       {isUserMessage && onEdit && (

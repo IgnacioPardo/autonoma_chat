@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-const geist = Geist({
+const _geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
 });

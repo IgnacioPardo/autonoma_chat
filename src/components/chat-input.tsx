@@ -301,7 +301,7 @@ export default function ChatInput({
                 autoCapitalize="off"
                 spellCheck="false"
                 rows={1}
-                onInput={(e) => {
+                onInput={(_e) => {
                   // Auto-resize textarea based on content
                   // const target = e.target as HTMLTextAreaElement;
                   // target.style.height = 'auto';

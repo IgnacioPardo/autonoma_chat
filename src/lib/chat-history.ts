@@ -10,7 +10,7 @@ interface ImageGenerationArgs {
   prompt?: string;
 }
 
-interface ImageToolInvocation {
+interface _ImageToolInvocation {
   toolName: 'generateImage';
   state: 'result';
   result: ImageGenerationResult;

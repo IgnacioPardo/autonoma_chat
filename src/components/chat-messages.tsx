@@ -149,21 +149,23 @@ export default function ChatMessages({
   };
   
   return (
-    <div className="flex w-full flex-col space-y-12 sm:space-y-12 pt-28 pb-40 px-5 sm:px-0 overflow-x-hidden max-w-full scroll-smooth h-full min-h-0">
-      {messages.length === 0 ? (
-        /* Welcome screen when no messages - positioned to work with dynamic input */
-        // <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        //   <h1 className="text-4xl font-bold mb-4 text-white drop-shadow-lg">
-        //     Autónoma Chat
-        //   </h1>
-        //   <p className="text-lg text-white/80 drop-shadow mb-8">
-        //     ¿En qué puedo ayudarte hoy?
-        //   </p>
-        // </div>
-        <></>
+    <div className="flex w-full h-full flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pt-6 pb-40 px-5 sm:px-0">
+        <div className="flex flex-col space-y-6 sm:space-y-8">
+        {messages.length === 0 ? (
+          /* Welcome screen when no messages - positioned to work with dynamic input */
+          // <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+          //   <h1 className="text-4xl font-bold mb-4 text-white drop-shadow-lg">
+          //     Autónoma Chat
+          //   </h1>
+          //   <p className="text-lg text-white/80 drop-shadow mb-8">
+          //     ¿En qué puedo ayudarte hoy?
+          //   </p>
+          // </div>
+          <></>
 
-      ) : (
-        messages.map((message) => {
+        ) : (
+          messages.map((message) => {
         const messageText = message.content;
         // Check if message has attachments (images)
         const hasAttachments = message.experimental_attachments && message.experimental_attachments.length > 0;
@@ -187,12 +189,16 @@ export default function ChatMessages({
         return (
           <div
             key={message.id}
-            className={`flex w-full overflow-x-hidden ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex w-full px-4 h-fit overflow-y-hidden overflow-x-hidden ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div className={`flex flex-col gap-2 max-w-xs lg:max-w-md w-full ${message.role === "user" ? "items-end" : "items-start"}`}>
+            <div className={`flex flex-col h-fit space-y-1 min-w-0 ${
+              message.role === "user" 
+                ? "items-end max-w-[80%] sm:max-w-md lg:max-w-lg" 
+                : "items-start max-w-[85%] sm:max-w-lg lg:max-w-2xl"
+            }`}>
               {/* Text message bubble */}
               <div
-                className={`group relative rounded-2xl break-words max-w-full mb-12 overflow-visible ${
+                className={`group relative rounded-2xl break-words overflow-visible ${
                   // Special styling for messages with tool invocations (like image generation)
                   message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
                   ? "bg-transparent border-none shadow-none backdrop-blur-bg-gradient-to-t none px-0 py-0"
@@ -200,8 +206,8 @@ export default function ChatMessages({
                     : !messageText.trim() && hasAttachments && message.role === "user"
                     ? "bg-transparent border-none shadow-none backdrop-blur-none px-0 py-0"
                     : message.role === "user"
-                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3"
-                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3"
+                    ? "from-primary-blue to-primary-violet rounded-br-sm bg-gradient-to-b text-white px-4 py-3 min-w-[100px]"
+                    : "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3 min-w-[120px]"
                 }`}
               >
                 {editingMessageId === message.id ? (
@@ -248,7 +254,7 @@ export default function ChatMessages({
                     {/* Only show text container if there's actual text content */}
                     {messageText.trim() && (
                       <div
-                        className={`prose prose-sm sm:prose-base max-w-none overflow-hidden break-words ${
+                        className={`prose prose-sm sm:prose-base max-w-none break-words ${
                           // Special styling for text content when there are tool invocations
                           message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant"
                             ? "rounded-bl-sm border border-gray-200 bg-white/90 text-gray-800 shadow-sm backdrop-blur-sm px-4 py-3 mb-4 [&_code]:bg-gray-100 [&_pre]:bg-gray-50 [&_code]:text-gray-800"
@@ -341,27 +347,33 @@ export default function ChatMessages({
                     )}
 
                     {/* Botones de acción que aparecen al hacer hover */}
-                    <MessageActions
-                      messageText={messageText}
-                      isUserMessage={message.role === "user"}
-                      onCopy={copyToClipboardHandler}
-                      onShare={shareTextHandler}
-                      onEdit={message.role === "user" ? () => startEdit(message.id, messageText) : undefined}
-                    />
+
+                    {/* Div to add space for  */}
                   </>
                 )}
               </div>
 
+              {
+                !(message.toolInvocations && message.toolInvocations.length > 0 && message.role === "assistant") &&
+                <MessageActions
+                  messageText={messageText}
+                  isUserMessage={message.role === "user"}
+                  onCopy={copyToClipboardHandler}
+                  onShare={shareTextHandler}
+                  onEdit={message.role === "user" ? () => startEdit(message.id, messageText) : undefined}
+                />
+              }
+
               {/* Render attached files separately below the text */}
               {hasAttachments && (
-                <div className={`flex flex-col gap-2 relative z-1 ${message.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`flex flex-col gap-3 relative z-1 w-full ${message.role === "user" ? "items-end" : "items-start"}`}>
                   {message.experimental_attachments?.map((attachment, index) => {
                     const fileType = getFileType(attachment);
                     
                     if (fileType === 'image') {
                       // Check if this is a generated image
-                      const isGeneratedImage = (attachment as any).metadata?.isGenerated === true;
-                      const generationMetadata = (attachment as any).metadata;
+                      const isGeneratedImage = (attachment as { metadata?: { isGenerated?: boolean } }).metadata?.isGenerated === true;
+                      const generationMetadata = (attachment as { metadata?: { prompt?: string; size?: string; quality?: string } }).metadata;
                       
                       // Render image attachments
                       return (
@@ -390,10 +402,10 @@ export default function ChatMessages({
                           {isGeneratedImage && generationMetadata?.prompt && (
                             <div className="p-3 border-t relative z-1">
                               <div className="text-xs text-gray-600 mb-1 break-words">
-                                <span className="font-medium">Prompt:</span> {generationMetadata.prompt}
+                                <span className="font-medium">Prompt:</span> {generationMetadata?.prompt ?? 'No prompt available'}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {generationMetadata.size} • {generationMetadata.quality} quality
+                                {generationMetadata?.size ?? 'Unknown size'} • {generationMetadata?.quality ?? 'Unknown quality'} quality
                               </div>
                             </div>
                           )}
@@ -443,14 +455,37 @@ export default function ChatMessages({
                   })}
                 </div>
               )}
+
+
             </div>
           </div>
         );
         })
-      )}
-      <div ref={messagesEndRef} />
-      {/* Loading indicator when assistant is typing */}
-      <LoadingIndicator isLoading={isLoading} />
+        )}
+        <div ref={messagesEndRef} />
+        {/* Loading indicator when assistant is typing - only show before streaming starts */}
+        <LoadingIndicator isLoading={isLoading && !hasActiveStreamingOrGeneration(messages)} />
+        </div>
+      </div>
     </div>
   );
+
+  // Helper function to check if there's active streaming or generation
+  function hasActiveStreamingOrGeneration(messages: Message[]): boolean {
+    if (messages.length === 0) return false;
+    
+    const lastMessage = messages[messages.length - 1];
+    
+    // If last message is from assistant and has content, streaming has started
+    if (lastMessage?.role === 'assistant' && lastMessage?.content.trim()) {
+      return true;
+    }
+    
+    // If last message has tool invocations (image generation in progress)
+    if (lastMessage?.toolInvocations && lastMessage?.toolInvocations.length > 0) {
+      return true;
+    }
+    
+    return false;
+  }
 }

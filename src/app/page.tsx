@@ -6,14 +6,18 @@ import NavBar from "~/components/navbar";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
 import AuthGuard from "~/components/auth-guard";
-import { useState, useEffect, useRef } from 'react';
-import type { Attachment } from 'ai';
-import type { ChatHistory } from '~/lib/chat-history';
-import { saveChatAfterMessage, processFileAttachments } from '~/lib/chat-utils';
-import { saveEditedMessage } from '~/lib/message-edit';
-import { copyToClipboard, shareText } from '~/lib/clipboard-utils';
-import { handleSelectChat, handleChatDeleted, handleNewChat } from '~/lib/chat-handlers';
-import { toastUtils } from '~/lib/toast-utils';
+import { useState, useEffect, useRef } from "react";
+import type { Attachment } from "ai";
+import type { ChatHistory } from "~/lib/chat-history";
+import { saveChatAfterMessage, processFileAttachments } from "~/lib/chat-utils";
+import { saveEditedMessage } from "~/lib/message-edit";
+import { copyToClipboard, shareText } from "~/lib/clipboard-utils";
+import {
+  handleSelectChat,
+  handleChatDeleted,
+  handleNewChat,
+} from "~/lib/chat-handlers";
+import { toastUtils } from "~/lib/toast-utils";
 
 export default function HomePage() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -27,228 +31,324 @@ export default function HomePage() {
   // Use ref to always have the latest currentChatId in callbacks
   const currentChatIdRef = useRef(currentChatId);
   // Refs to hold current state values for callbacks
-  const messagesRef = useRef<ReturnType<typeof useChat>['messages']>([]);
+  const messagesRef = useRef<ReturnType<typeof useChat>["messages"]>([]);
   const isLoadingRef = useRef(false);
   const pendingSaveRef = useRef(false);
 
-  const { messages, input, handleSubmit, setMessages, reload, append, setInput, isLoading } = useChat({
+  const {
+    messages,
+    input,
+    handleSubmit,
+    setMessages,
+    reload,
+    append,
+    setInput,
+    isLoading,
+  } = useChat({
     // Custom fetch to completely clean toolInvocations before sending to /api/chat only
     fetch: async (input, init) => {
       // Only clean toolInvocations for the chat API endpoint, not for other endpoints like /api/chats
-      const isApIChatRequest = typeof input === 'string' && input.includes('/api/chat') && !input.includes('/api/chats');
-      
-      if (isApIChatRequest && init?.body && typeof init.body === 'string') {
+      const isApIChatRequest =
+        typeof input === "string" &&
+        input.includes("/api/chat") &&
+        !input.includes("/api/chats");
+
+      if (isApIChatRequest && init?.body && typeof init.body === "string") {
         try {
-          const data = JSON.parse(init.body);
+          type Data = {
+            messages?: Array<{
+              toolInvocations?: unknown;
+              role?: string;
+              [key: string]: unknown;
+            }>;
+          };
+
+          const data: Data = JSON.parse(init.body) as Data;
+          
           if (data.messages && Array.isArray(data.messages)) {
             // Completely remove toolInvocations from ALL messages for stream processing
-            const cleanedMessages = data.messages.map((message: any) => {
-              if (message.toolInvocations) {
-                console.log(`Frontend: Removing toolInvocations from ${message.role} message for stream processing`);
-                const { toolInvocations, ...cleanMessage } = message;
+            const cleanedMessages = data.messages.map((message) => {
+              if ("toolInvocations" in message) {
+                console.log(
+                  `Frontend: Removing toolInvocations from ${message.role ?? "unknown"} message for stream processing`,
+                );
+                const { toolInvocations: _toolInvocations, ...cleanMessage } =
+                  message;
                 return cleanMessage;
               }
               return message;
             });
-            
-            console.log('Frontend: Cleaned messages for /api/chat:', cleanedMessages.length);
-            
+
+            console.log(
+              "Frontend: Cleaned messages for /api/chat:",
+              cleanedMessages.length,
+            );
+
             init.body = JSON.stringify({ ...data, messages: cleanedMessages });
           }
         } catch (e) {
-          console.warn('Failed to parse request body for toolInvocation cleaning:', e);
+          console.warn(
+            "Failed to parse request body for toolInvocation cleaning:",
+            e,
+          );
         }
       }
-      
+
       return fetch(input, init);
     },
     onFinish: (message) => {
-      console.log('=== onFinish: Assistant response completed ===');
-      console.log('Assistant message FULL DETAILS:', {
+      console.log("=== onFinish: Assistant response completed ===");
+      console.log("Assistant message FULL DETAILS:", {
         id: message.id,
         role: message.role,
         content: message.content,
         contentLength: message.content.length,
         hasToolInvocations: !!message.toolInvocations?.length,
         toolInvocationsCount: message.toolInvocations?.length ?? 0,
-        toolInvocations: message.toolInvocations?.map(inv => ({
+        toolInvocations: message.toolInvocations?.map((inv) => ({
           toolName: inv.toolName,
           state: inv.state,
-          hasResult: 'result' in inv
+          hasResult: "result" in inv,
         })),
         hasAttachments: !!message.experimental_attachments?.length,
-        attachmentsCount: message.experimental_attachments?.length ?? 0
+        attachmentsCount: message.experimental_attachments?.length ?? 0,
       });
-      
+
       // Convert any generated images from toolInvocations to regular attachments
       if (message.toolInvocations && message.toolInvocations.length > 0) {
-        console.log('Converting toolInvocations to attachments...');
-        
-        const generatedImages: any[] = [];
+        console.log("Converting toolInvocations to attachments...");
+
+        interface GeneratedImageAttachment {
+          name: string;
+          contentType: string;
+          url: string;
+          metadata: {
+            prompt?: string;
+            size?: string;
+            quality?: string;
+            isGenerated: boolean;
+          };
+        }
+
+        const generatedImages: GeneratedImageAttachment[] = [];
         message.toolInvocations.forEach((invocation, invIndex) => {
-          if (invocation.toolName === 'generateImage' && 
-              invocation.state === 'result' && 
-              'result' in invocation) {
-            
-            const result = invocation.result as any;
+          if (
+            invocation.toolName === "generateImage" &&
+            invocation.state === "result" &&
+            "result" in invocation
+          ) {
+            const result = invocation.result as {
+              success?: boolean;
+              imageUrl?: string;
+              prompt?: string;
+              size?: string;
+              quality?: string;
+            };
             if (result.success && result.imageUrl) {
               // Create filename from prompt
-              const promptSource = result.prompt ?? 'image';
+              const promptSource = result.prompt ?? "image";
               const promptForFilename = String(promptSource)
                 .substring(0, 50)
-                .replace(/[^a-zA-Z0-9\s]/g, '')
-                .replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9\s]/g, "")
+                .replace(/\s+/g, "-")
                 .toLowerCase();
-              
+
               generatedImages.push({
                 name: `generated-image-${promptForFilename}-${invIndex + 1}.png`,
-                contentType: 'image/png',
+                contentType: "image/png",
                 url: result.imageUrl,
                 // Store metadata about the generation for UI display
                 metadata: {
                   prompt: result.prompt,
                   size: result.size,
                   quality: result.quality,
-                  isGenerated: true
-                }
+                  isGenerated: true,
+                },
               });
             }
           }
         });
-        
+
         if (generatedImages.length > 0) {
-          console.log('Adding generated images as attachments:', generatedImages.length);
-          
+          console.log(
+            "Adding generated images as attachments:",
+            generatedImages.length,
+          );
+
           // Update the message to remove toolInvocations and add attachments
           // IMPORTANT: Ensure message has some content for better UX
           const updatedMessage = {
             ...message,
-            content: message.content.trim() || `Generated ${generatedImages.length} image${generatedImages.length > 1 ? 's' : ''}`,
-            experimental_attachments: (message.experimental_attachments || []).concat(generatedImages),
-            toolInvocations: undefined // Remove toolInvocations completely
+            content:
+              message.content.trim() ||
+              `Generated ${generatedImages.length} image${generatedImages.length > 1 ? "s" : ""}`,
+            experimental_attachments: (
+              message.experimental_attachments ?? []
+            ).concat(generatedImages),
+            toolInvocations: undefined, // Remove toolInvocations completely
           };
-          
-          console.log('Updated message for state:', {
+
+          console.log("Updated message for state:", {
             id: updatedMessage.id,
             role: updatedMessage.role,
             content: updatedMessage.content,
             contentLength: updatedMessage.content.length,
-            attachmentsCount: updatedMessage.experimental_attachments?.length ?? 0,
-            hasToolInvocations: !!updatedMessage.toolInvocations
+            attachmentsCount:
+              updatedMessage.experimental_attachments?.length ?? 0,
+            hasToolInvocations: !!updatedMessage.toolInvocations,
           });
-          
+
           // Update the messages state to replace the current message
-          setMessages(prevMessages => {
+          setMessages((prevMessages) => {
             const newMessages = [...prevMessages];
             const lastIndex = newMessages.length - 1;
             if (lastIndex >= 0 && newMessages[lastIndex]?.id === message.id) {
               newMessages[lastIndex] = updatedMessage;
             }
-            
-            console.log('=== Updated messages with generated images ===');
-            console.log('Total messages:', newMessages.length);
-            console.log('All messages details:', newMessages.map((m, i) => ({
-              index: i,
-              id: m.id,
-              role: m.role,
-              content: m.content.substring(0, 50) + (m.content.length > 50 ? '...' : ''),
-              contentLength: m.content.length,
-              hasAttachments: !!m.experimental_attachments?.length,
-              attachmentCount: m.experimental_attachments?.length ?? 0,
-              attachmentNames: m.experimental_attachments?.map(att => att.name) ?? []
-            })));
-            
+
+            console.log("=== Updated messages with generated images ===");
+            console.log("Total messages:", newMessages.length);
+            console.log(
+              "All messages details:",
+              newMessages.map((m, i) => ({
+                index: i,
+                id: m.id,
+                role: m.role,
+                content:
+                  m.content.substring(0, 50) +
+                  (m.content.length > 50 ? "..." : ""),
+                contentLength: m.content.length,
+                hasAttachments: !!m.experimental_attachments?.length,
+                attachmentCount: m.experimental_attachments?.length ?? 0,
+                attachmentNames:
+                  m.experimental_attachments?.map((att) => att.name) ?? [],
+              })),
+            );
+
             // Save immediately after updating messages with generated images
             setTimeout(() => {
-              console.log('🔄 Saving conversation with generated images...');
-              console.log('Messages to save:', newMessages.map(m => ({
-                role: m.role,
-                content: m.content.substring(0, 30) + '...',
-                contentLength: m.content.length,
-                attachments: m.experimental_attachments?.length ?? 0
-              })));
-              
+              console.log("🔄 Saving conversation with generated images...");
+              console.log(
+                "Messages to save:",
+                newMessages.map((m) => ({
+                  role: m.role,
+                  content: m.content.substring(0, 30) + "...",
+                  contentLength: m.content.length,
+                  attachments: m.experimental_attachments?.length ?? 0,
+                })),
+              );
+
               (async () => {
                 try {
                   await saveChatAfterMessage(newMessages, {
                     currentChatId: currentChatIdRef.current,
                     setCurrentChatId,
                     setSidebarRefreshTrigger,
-                    setIsSaving
+                    setIsSaving,
                   });
-                  console.log('✅ Conversation with generated images saved successfully');
+                  console.log(
+                    "✅ Conversation with generated images saved successfully",
+                  );
                 } catch (error) {
-                  console.error('❌ Error saving conversation with generated images:', error);
-                  toastUtils.apiError(error, 'Error al guardar el chat');
+                  console.error(
+                    "❌ Error saving conversation with generated images:",
+                    error,
+                  );
+                  toastUtils.apiError(error, "Error al guardar el chat");
                 }
               })().catch(console.error);
             }, 100);
-            
+
             return newMessages;
           });
         } else {
           // No generated images, but we still need to save the assistant message
-          console.log('No generated images found, but saving assistant message with toolInvocations');
+          console.log(
+            "No generated images found, but saving assistant message with toolInvocations",
+          );
           pendingSaveRef.current = true;
-          console.log('🔄 Marked conversation for saving when loading finishes');
+          console.log(
+            "🔄 Marked conversation for saving when loading finishes",
+          );
         }
       } else {
         // No toolInvocations, just mark for regular save
-        console.log('No toolInvocations found in assistant message');
+        console.log("No toolInvocations found in assistant message");
         pendingSaveRef.current = true;
-        console.log('🔄 Marked conversation for saving when loading finishes');
+        console.log("🔄 Marked conversation for saving when loading finishes");
       }
     },
     onError: (error) => {
-      console.error('Chat error:', error);
-      
+      console.error("Chat error:", error);
+
       // Handle specific error types
-      if (error.message.includes('413') || error.message.toLowerCase().includes('payload too large')) {
-        toastUtils.error('Los archivos adjuntos son demasiado grandes. Intenta reducir el tamaño o número de archivos.');
-      } else if (error.message.includes('Attachments too large')) {
-        toastUtils.error('Los archivos adjuntos exceden el límite de 20MB. Por favor, reduce el tamaño de los archivos.');
-      } else if (error.message.includes('An error occurred')) {
+      if (
+        error.message.includes("413") ||
+        error.message.toLowerCase().includes("payload too large")
+      ) {
+        toastUtils.error(
+          "Los archivos adjuntos son demasiado grandes. Intenta reducir el tamaño o número de archivos.",
+        );
+      } else if (error.message.includes("Attachments too large")) {
+        toastUtils.error(
+          "Los archivos adjuntos exceden el límite de 20MB. Por favor, reduce el tamaño de los archivos.",
+        );
+      } else if (error.message.includes("An error occurred")) {
         // Specific handling for stream errors
-        console.warn('Stream error detected, this may be related to tool processing.');
-        toastUtils.error('Error en el procesamiento. La conversación puede continuar normalmente.');
+        console.warn(
+          "Stream error detected, this may be related to tool processing.",
+        );
+        toastUtils.error(
+          "Error en el procesamiento. La conversación puede continuar normalmente.",
+        );
       } else {
-        toastUtils.apiError(error, 'Error al enviar el mensaje');
+        toastUtils.apiError(error, "Error al enviar el mensaje");
       }
-    }
-  });  
+    },
+  });
   useEffect(() => {
     const wasLoading = isLoadingRef.current;
     const isNowLoading = isLoading;
     isLoadingRef.current = isLoading;
-    
+
     // If we just finished loading (was loading, now not loading)
     // and we have a pending save, save the complete conversation
     if (wasLoading && !isNowLoading && pendingSaveRef.current) {
       pendingSaveRef.current = false;
-      
-      console.log('=== Loading finished, checking if save needed ===');
-      console.log('Final messages count:', messages.length);
-      
+
+      console.log("=== Loading finished, checking if save needed ===");
+      console.log("Final messages count:", messages.length);
+
       const finalMessages = messages.map((msg, i) => ({
         index: i,
         role: msg.role,
-        content: msg.content.substring(0, 50) + '...',
+        content: msg.content.substring(0, 50) + "...",
         hasAttachments: !!msg.experimental_attachments?.length,
-        attachmentCount: msg.experimental_attachments?.length ?? 0
+        attachmentCount: msg.experimental_attachments?.length ?? 0,
       }));
-      console.log('Final messages:', finalMessages);
-      
+      console.log("Final messages:", finalMessages);
+
       // Check if the last message has attachments that might have been processed in onFinish
       const lastMessage = messages[messages.length - 1];
-      const hasGeneratedAttachments = lastMessage?.experimental_attachments?.some((att: any) => 
-        att.metadata && att.metadata.isGenerated
-      );
-      
+      const hasGeneratedAttachments =
+        lastMessage?.experimental_attachments?.some(
+          (att) =>
+            att &&
+            typeof att === "object" &&
+            "metadata" in att &&
+            att.metadata &&
+            typeof att.metadata === "object" &&
+            "isGenerated" in att.metadata &&
+            att.metadata.isGenerated === true,
+        );
+
       if (hasGeneratedAttachments) {
-        console.log('🔄 Generated images already saved in onFinish, skipping duplicate save');
+        console.log(
+          "🔄 Generated images already saved in onFinish, skipping duplicate save",
+        );
         return;
       }
-      
+
       // Save the complete conversation for non-image-generation responses
       setTimeout(() => {
         (async () => {
@@ -257,30 +357,33 @@ export default function HomePage() {
               currentChatId: currentChatIdRef.current,
               setCurrentChatId,
               setSidebarRefreshTrigger,
-              setIsSaving
+              setIsSaving,
             });
-            console.log('✅ Complete conversation saved successfully');
+            console.log("✅ Complete conversation saved successfully");
           } catch (error) {
-            console.error('❌ Error saving complete conversation:', error);
-            toastUtils.apiError(error, 'Error al guardar el chat');
+            console.error("❌ Error saving complete conversation:", error);
+            toastUtils.apiError(error, "Error al guardar el chat");
           }
         })().catch(console.error);
       }, 100);
     }
   }, [isLoading, messages]);
-  
+
   // Keep the refs in sync with state
   useEffect(() => {
     messagesRef.current = messages;
-    console.log('=== Messages state updated ===');
-    console.log('Messages count:', messages.length);
-    console.log('Messages with attachments:', messages.map((m, i) => ({
-      index: i,
-      role: m.role,
-      content: m.content.substring(0, 30) + '...',
-      hasAttachments: !!m.experimental_attachments?.length,
-      attachmentCount: m.experimental_attachments?.length ?? 0
-    })));
+    console.log("=== Messages state updated ===");
+    console.log("Messages count:", messages.length);
+    console.log(
+      "Messages with attachments:",
+      messages.map((m, i) => ({
+        index: i,
+        role: m.role,
+        content: m.content.substring(0, 30) + "...",
+        hasAttachments: !!m.experimental_attachments?.length,
+        attachmentCount: m.experimental_attachments?.length ?? 0,
+      })),
+    );
   }, [messages]);
 
   useEffect(() => {
@@ -291,21 +394,26 @@ export default function HomePage() {
   }, [currentChatId]);
 
   const handleImageUpload = (file: File) => {
-    console.log('Adding image to upload queue:', file.name, file.type, file.size);
-    setUploadedImages(prev => {
+    console.log(
+      "Adding image to upload queue:",
+      file.name,
+      file.type,
+      file.size,
+    );
+    setUploadedImages((prev) => {
       const newImages = [...prev, file];
-      console.log('Total images in queue:', newImages.length);
+      console.log("Total images in queue:", newImages.length);
       return newImages;
     });
   };
 
   const handleImageRemove = (index: number) => {
-    console.log('=== handleImageRemove called ===');
-    console.log('Removing image at index:', index);
-    console.log('Stack trace:', new Error().stack);
-    setUploadedImages(prev => {
+    console.log("=== handleImageRemove called ===");
+    console.log("Removing image at index:", index);
+    console.log("Stack trace:", new Error().stack);
+    setUploadedImages((prev) => {
       const newImages = prev.filter((_, i) => i !== index);
-      console.log('Images after removal:', newImages.length);
+      console.log("Images after removal:", newImages.length);
       return newImages;
     });
   };
@@ -313,65 +421,84 @@ export default function HomePage() {
   // Custom form submit handler to handle images
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!input.trim() && uploadedImages.length === 0) return;
-    
-    console.log('Form submitted with:', { input: input.substring(0, 50) + '...', imagesCount: uploadedImages.length });
-    
+
+    console.log("Form submitted with:", {
+      input: input.substring(0, 50) + "...",
+      imagesCount: uploadedImages.length,
+    });
+
     if (uploadedImages.length > 0) {
-      console.log('Processing images for attachment...');
-      console.log('Images:', uploadedImages.map(img => ({ name: img.name, type: img.type, size: img.size })));
-      
+      console.log("Processing images for attachment...");
+      console.log(
+        "Images:",
+        uploadedImages.map((img) => ({
+          name: img.name,
+          type: img.type,
+          size: img.size,
+        })),
+      );
+
       // Process images for attachment
       const attachments = await processFileAttachments(uploadedImages);
-      console.log('Processed attachments:', attachments.map((a: Attachment) => ({ 
-        name: a.name, 
-        urlLength: a.url.length,
-        contentType: a.contentType 
-      })));
+      console.log(
+        "Processed attachments:",
+        attachments.map((a: Attachment) => ({
+          name: a.name,
+          urlLength: a.url.length,
+          contentType: a.contentType,
+        })),
+      );
 
-      console.log('About to call append with attachments...');
-      console.log('Attachments structure:', JSON.stringify(attachments.map((a: Attachment) => ({
-        name: a.name,
-        urlLength: a.url.length,
-        urlStart: a.url.substring(0, 50),
-        contentType: a.contentType
-      })), null, 2));
-      
+      console.log("About to call append with attachments...");
+      console.log(
+        "Attachments structure:",
+        JSON.stringify(
+          attachments.map((a: Attachment) => ({
+            name: a.name,
+            urlLength: a.url.length,
+            urlStart: a.url.substring(0, 50),
+            contentType: a.contentType,
+          })),
+          null,
+          2,
+        ),
+      );
+
       // Submit with attachments
       const messageToSend = {
         content: input ?? "Archivo enviado", // Provide fallback text if input is empty
-        role: 'user' as const,
+        role: "user" as const,
         experimental_attachments: attachments,
       };
-      
-      console.log('=== MESSAGE TO SEND ===');
-      console.log('Message to send:', {
+
+      console.log("=== MESSAGE TO SEND ===");
+      console.log("Message to send:", {
         content: messageToSend.content,
         role: messageToSend.role,
         attachmentCount: messageToSend.experimental_attachments.length,
-        attachmentDetails: messageToSend.experimental_attachments.map(att => ({
-          name: att.name,
-          contentType: att.contentType,
-          urlLength: att.url?.length ?? 0
-        }))
+        attachmentDetails: messageToSend.experimental_attachments.map(
+          (att) => ({
+            name: att.name,
+            contentType: att.contentType,
+            urlLength: att.url?.length ?? 0,
+          }),
+        ),
       });
-      
+
       void append(messageToSend);
-      
+
       // Clear form AFTER sending
-      setInput('');
+      setInput("");
       setUploadedImages([]);
-      console.log('Cleared form after sending');
-      
+      console.log("Cleared form after sending");
     } else {
-      console.log('Submitting text-only message...');
+      console.log("Submitting text-only message...");
       // Use default handleSubmit for text-only messages
       handleSubmit(e);
     }
   };
-
-
 
   const startEdit = (messageId: string, currentText: string) => {
     setEditingMessageId(messageId);
@@ -395,9 +522,9 @@ export default function HomePage() {
         setSidebarRefreshTrigger,
         setIsSaving,
       });
-      toastUtils.success('Mensaje editado correctamente');
+      toastUtils.success("Mensaje editado correctamente");
     } catch (error) {
-      toastUtils.apiError(error, 'Error al editar el mensaje');
+      toastUtils.apiError(error, "Error al editar el mensaje");
     }
   };
 
@@ -406,7 +533,7 @@ export default function HomePage() {
       setMessages,
       setCurrentChatId,
       setEditingMessageId,
-      setEditText
+      setEditText,
     });
   };
 
@@ -419,7 +546,7 @@ export default function HomePage() {
       setMessages,
       setCurrentChatId,
       setEditingMessageId,
-      setEditText
+      setEditText,
     });
   };
 
@@ -450,17 +577,17 @@ export default function HomePage() {
           onChatDeleted={onChatDeleted}
           refreshTrigger={sidebarRefreshTrigger}
         />
-        
+
         {/* background */}
-        <div className="fixed inset-0 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat z-0 scale-110 blur-sm animate-in fade-in duration-300"></div> 
-        
+        <div className="animate-in fade-in fixed inset-0 z-0 scale-110 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat blur-sm duration-300"></div>
+
         {/* NavBar */}
-        <NavBar 
+        <NavBar
           onOpenSidebar={() => setSidebarOpen(true)}
           isSaving={isSaving}
         />
 
-        <main className="pt-16 flex min-h-screen w-full sm:w-4/5 md:w-2/3 flex-col items-center justify-start overflow-y-auto overflow-x-hidden pb-safe animate-in fade-in duration-300 z-1">
+        <main className="pb-safe animate-in fade-in z-1 flex h-screen w-full flex-col items-center justify-start overflow-hidden pt-16 duration-300 sm:w-4/5 md:w-2/3">
           <ChatMessages
             messages={messages}
             isLoading={isLoading}

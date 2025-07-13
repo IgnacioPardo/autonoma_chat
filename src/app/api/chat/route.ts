@@ -95,7 +95,7 @@ export async function POST(req: Request) {
           `Backend: Additional cleaning of toolInvocations from message ${index} (${message.role})`,
         );
         // Remove "parts" key from assistant messages
-        const { parts, ...cleanMessage } = message;
+        const { parts: _parts, ...cleanMessage } = message;
         return cleanMessage;
       }
       return message;
