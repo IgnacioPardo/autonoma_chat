@@ -462,11 +462,11 @@ export default function ChatView({
   };
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col relative">
+      {/* Fixed loading indicator for chat loading - doesn't affect layout */}
       {isLoadingChat && (
-        <div className="flex items-center justify-center p-8">
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in duration-200">
           <LoadingIndicator isLoading={true} />
-          {/* <span className="ml-3 text-sm text-gray-600">Cargando chat...</span> */}
         </div>
       )}
       
