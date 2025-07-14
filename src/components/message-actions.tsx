@@ -23,7 +23,7 @@ export default function MessageActions({
   return (
     <div className={`relative z-20 flex flex-row gap-1 p-2 opacity-100`}>
       {/* Edit button - only for user messages */}
-      {isUserMessage && onEdit && (
+      {/* {isUserMessage && onEdit && (
         <button
           onClick={onEdit}
           className="cursor-pointer rounded-lg bg-orange-100 p-2 text-orange-700 transition-colors hover:bg-orange-200"
@@ -31,7 +31,7 @@ export default function MessageActions({
         >
           <Edit3 className="h-4 w-4" />
         </button>
-      )}
+      )} */}
 
       {/* Voice playback - only for assistant messages */}
       {!isUserMessage && (
