@@ -114,7 +114,7 @@ export default function NavBar({ onOpenSidebar, isSaving, currentChatId }: NavBa
             className="flex cursor-pointer items-center gap-2 rounded-lg p-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
           >
             <User size={20} />
-            Probar Login
+            <span className="hidden text-sm text-gray-600 sm:inline">Probar Login</span>
           </button>
         ) : (
           (!isDevelopment || session) && (

@@ -1,3 +1,5 @@
+'use client';
+
 import { Send, ImagePlus, X, FileText, BarChart3, File, AudioLines } from "lucide-react";
 import Image from "next/image";
 import type { Message, Attachment } from "ai";
@@ -6,6 +8,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import VoiceInput from "./voice-input";
 import { useSpeech } from "../hooks/use-speech";
+import { useMediaQuery } from "~/hooks/use-media-query";
 
 interface ChatInputProps {
   input: string;
@@ -41,6 +44,9 @@ export default function ChatInput({
   messages,
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Media query for mobile
+  const isMobile = useMediaQuery("mobile");
 
   // Voice functionality
   const {
@@ -331,11 +337,12 @@ export default function ChatInput({
                 className={`group-hover/mini-orb:animate-out group-hover/mini-orb:fade-out animate-in fade-in overflow-y max-h-40 min-h-[56px] w-full resize-none overflow-x-auto border-0 bg-transparent px-2 py-4 text-xs whitespace-nowrap transition-opacity duration-300 group-hover/mini-orb:opacity-0 focus:ring-0 focus:outline-none sm:overflow-x-visible sm:text-base sm:whitespace-normal`}
                 value={isMiniOrbHovered ? "" : input}
                 placeholder={
-                  isMiniOrbHovered
+                  isMobile ? "Escribe" :
+                  (isMiniOrbHovered
                     ? ""
                     : messages.length === 0
                       ? "Comienza una conversación..."
-                      : "Escribe tu mensaje..."
+                      : "Escribe tu mensaje...")
                 }
                 onChange={handleInputChange}
                 autoComplete="off"
@@ -381,7 +388,7 @@ export default function ChatInput({
             </div>
             {/* Mic Icon */}
             <div
-              className={` ${isListening ? "w-full flex-1" : "w-14"} flex h-14 items-center justify-start`}
+              className={` ${isListening ? "w-full flex-1" : "w-10"} flex h-10 items-center justify-start`}
             >
               <VoiceInput
                 isListening={isListening}
@@ -393,7 +400,7 @@ export default function ChatInput({
               />
             </div>
             {/* Image Upload Icon */}
-            <div className="flex h-14 w-14 items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center">
               <button
                 type="button"
                 onClick={handleImageButtonClick}

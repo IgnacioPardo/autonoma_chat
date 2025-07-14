@@ -115,6 +115,7 @@ export async function POST(req: Request) {
         );
         // Remove "parts" key from assistant messages
         const { parts: _parts, ...cleanMessage } = message;
+        
         return cleanMessage;
       }
       return message;

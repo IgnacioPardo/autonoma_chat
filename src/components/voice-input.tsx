@@ -61,7 +61,7 @@ export default function VoiceInput({
   }
 
   return (
-    <div className="flex w-full flex-row items-center justify-end gap-2">
+    <div className="flex w-full flex-row items-center justify-center gap-2">
       {/* Live transcript display - more compact */}
       {isListening && transcript && (
         <div className="ml-1 max-w-[120px] truncate text-xs text-gray-500 italic">

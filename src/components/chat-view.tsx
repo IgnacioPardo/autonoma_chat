@@ -5,8 +5,8 @@ import type { Message } from "ai";
 import ChatMessages from "~/components/chat-messages";
 import ChatInput from "~/components/chat-input";
 import LoadingIndicator from "~/components/loading-indicator";
-import { useState, useEffect, useRef } from "react";
-import type { Attachment } from "ai";
+import { useState, useEffect, useRef, useCallback } from "react";
+// import type { Attachment } from "ai";
 import type { ChatHistory } from "~/lib/chat-history";
 import { saveChatAfterMessage, processFileAttachments } from "~/lib/chat-utils";
 import { saveEditedMessage } from "~/lib/message-edit";
@@ -278,6 +278,44 @@ export default function ChatView({
     }
   }, [chatId, setMessages]);
 
+  // Helper function to save chat and handle URL replacement
+  const saveChatAndUpdateUrl = useCallback(async (messagesData: Message[]) => {
+    const wasNewChat = !currentChatIdRef.current;
+
+    try {
+      await saveChatAfterMessage(messagesData, {
+        currentChatId: currentChatIdRef.current,
+        setCurrentChatId: (newChatId: string | null) => {
+          // Update the ref immediately
+          currentChatIdRef.current = newChatId;
+
+          // Call the parent callback
+          if (onChatIdChange) {
+            onChatIdChange(newChatId);
+          }
+
+          // Replace URL if this was a new chat and we're on the home page
+          if (wasNewChat && newChatId && shouldReplaceUrl) {
+            console.log("🔄 Replacing URL with new chat ID:", newChatId);
+            window.history.replaceState({}, "", `/chat/${newChatId}`);
+          }
+        },
+        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {
+          // Empty function fallback
+        }),
+        setIsSaving: onSavingStateChange ?? (() => {
+          // Empty function fallback
+        }),
+      });
+
+      return true;
+    } catch (error) {
+      console.error("❌ Error saving chat:", error);
+      toastUtils.apiError(error, "Error al guardar el chat");
+      return false;
+    }
+  }, [onChatIdChange, onSidebarRefreshTrigger, onSavingStateChange, shouldReplaceUrl]);
+
   useEffect(() => {
     const wasLoading = isLoadingRef.current;
     const isNowLoading = isLoading;
@@ -318,7 +356,7 @@ export default function ChatView({
         })().catch(console.error);
       }, 100);
     }
-  }, [isLoading, messages, onChatIdChange, onSidebarRefreshTrigger, onSavingStateChange]);
+  }, [isLoading, messages, onChatIdChange, onSidebarRefreshTrigger, onSavingStateChange, saveChatAndUpdateUrl]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -328,43 +366,7 @@ export default function ChatView({
     currentChatIdRef.current = chatId ?? null;
   }, [chatId]);
 
-  // Helper function to save chat and handle URL replacement
-  const saveChatAndUpdateUrl = async (messagesData: Message[]) => {
-    const wasNewChat = !currentChatIdRef.current;
-    
-    try {
-      await saveChatAfterMessage(messagesData, {
-        currentChatId: currentChatIdRef.current,
-        setCurrentChatId: (newChatId: string | null) => {
-          // Update the ref immediately
-          currentChatIdRef.current = newChatId;
-          
-          // Call the parent callback
-          if (onChatIdChange) {
-            onChatIdChange(newChatId);
-          }
-          
-          // Replace URL if this was a new chat and we're on the home page
-          if (wasNewChat && newChatId && shouldReplaceUrl) {
-            console.log("🔄 Replacing URL with new chat ID:", newChatId);
-            window.history.replaceState({}, "", `/chat/${newChatId}`);
-          }
-        },
-        setSidebarRefreshTrigger: onSidebarRefreshTrigger ?? (() => {
-          // Empty function fallback
-        }),
-        setIsSaving: onSavingStateChange ?? (() => {
-          // Empty function fallback
-        }),
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("❌ Error saving chat:", error);
-      toastUtils.apiError(error, "Error al guardar el chat");
-      return false;
-    }
-  };
+  
 
   const handleImageUpload = (file: File) => {
     console.log("Adding image to upload queue:", file.name, file.type, file.size);

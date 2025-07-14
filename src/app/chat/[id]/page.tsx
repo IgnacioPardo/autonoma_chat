@@ -9,7 +9,7 @@ import PublicChatView from "~/components/public-chat-view";
 import AuthGuard from "~/components/auth-guard";
 import LoadingIndicator from "~/components/loading-indicator";
 import type { ChatHistory } from "~/lib/chat-history";
-import { handleChatDeleted } from "~/lib/chat-handlers";
+// import { handleChatDeleted } from "~/lib/chat-handlers";
 
 export default function ChatPage() {
   const params = useParams();
