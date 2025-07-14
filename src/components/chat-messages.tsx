@@ -272,7 +272,7 @@ export default function ChatMessages({
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-5 pt-6 pb-40 sm:px-0">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-5 pt-20 pb-40 sm:px-0 sm:pt-24">
         <div className="flex flex-col space-y-6 sm:space-y-8">
           {messages.length === 0 ? (
             /* Welcome screen when no messages - positioned to work with dynamic input */
