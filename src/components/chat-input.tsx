@@ -177,12 +177,14 @@ export default function ChatInput({
         <div className="mask-gradient animate-in fade-in fixed bottom-0 z-[30] h-[140px] w-full backdrop-blur-sm duration-300"></div>
       )}
 
-      {/* Input Form - posición dinámica basada en si hay mensajes */}
+      {/* Input Form - posición dinámica basada en si hay mensajes y archivos subidos */}
       <div
         className={`fixed z-[40] w-full p-4 transition-all duration-1000 ease-in-out sm:w-full md:w-2/3 ${
           messages.length === 0
-            ? "bottom-2/5 left-1/2 -translate-x-1/2 -translate-y-1/2 transform"
-            : "bottom-0 left-1/2 -translate-x-1/2 transform"
+            ? uploadedImages.length > 0
+              ? "bottom-1/4 left-1/2 -translate-x-1/2 transform" // Lower when files are uploaded and no messages
+              : "bottom-2/5 left-1/2 -translate-x-1/2 -translate-y-1/2 transform" // Center when no files and no messages
+            : "bottom-0 left-1/2 -translate-x-1/2 transform" // Bottom when there are messages
         }`}
       >
         {/* Hidden file input */}

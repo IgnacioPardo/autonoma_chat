@@ -400,9 +400,7 @@ export default function ChatMessages({
                                 message.role === "assistant"
                                   ? "mb-4 rounded-bl-sm border border-gray-200 bg-white/90 px-4 py-3 text-gray-800 shadow-sm backdrop-blur-sm [&_code]:bg-gray-100 [&_code]:text-gray-800 [&_pre]:bg-gray-50"
                                   : // Special styling for user text when there are attachments (create separate bubble)
-                                    hasAttachments && message.role === "user"
-                                    ? "from-primary-blue to-primary-violet prose-invert mb-4 rounded-br-sm bg-gradient-to-b px-4 py-3 text-white [&_code]:bg-white/20 [&_code]:text-gray-100 [&_pre]:bg-white/10"
-                                    : message.role === "user"
+                                    message.role === "user"
                                       ? "prose-invert [&_code]:bg-white/20 [&_code]:text-gray-100 [&_pre]:bg-white/10"
                                       : "[&_code]:bg-gray-100 [&_code]:text-gray-800 [&_pre]:bg-gray-50"
                               }`}
