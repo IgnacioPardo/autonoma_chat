@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: "Autonoma Chat",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://autonoma-chat.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Autonoma Chat - AI Assistant",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Autonoma Chat - Asistente AI Inteligente",
     description: "Conversaciones inteligentes con IA avanzada. Chatea, genera imágenes y sube archivos con nuestro asistente AI.",
-    images: ["/og-image.png"],
+    images: ["https://autonoma-chat.vercel.app/og-image.png"],
     creator: "@autonoma",
   },
   robots: {
